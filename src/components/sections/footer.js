@@ -37,8 +37,8 @@ function FooterLink({ children, path }) {
     <Link
       href={path}
       fontSize={{ base: "sm", lg: "md" }}
-      color="brand.gray"
-      _hover={{ color: "black" }}
+      color="gray.400"
+      _hover={{ color: "white" }}
     >
       {children}
     </Link>
@@ -48,7 +48,7 @@ function FooterLink({ children, path }) {
 function FooterTitle({ children }) {
   const footerTitleSize = useBreakpointValue({ base: "md", md: "sm" })
   return (
-    <Heading size={footerTitleSize} letterSpacing="sm">
+    <Heading size={footerTitleSize} letterSpacing="sm" color="white">
       {children}
     </Heading>
   )
@@ -63,13 +63,15 @@ function FooterForm({
 }) {
   const placeholderFontSize = useBreakpointValue({ base: "sm", lg: "md" })
   const placeholderStyle = {
-    color: "gray.300",
+    color: "gray.500",
     fontSize: placeholderFontSize,
   }
   const inputStyle = {
-    borderRadius: "0",
-    borderColor: "gray.300",
-    focusBorderColor: "brand.main",
+    borderRadius: "md",
+    borderColor: "gray.600",
+    bg: "gray.800",
+    color: "white",
+    focusBorderColor: "brand.primary",
     _placeholder: { ...placeholderStyle },
   }
 
@@ -145,12 +147,13 @@ function FooterForm({
       ></Textarea>
       <Button
         type="submit"
-        bgColor="black"
-        colorScheme="black"
-        borderRadius="false"
+        bgColor="brand.primary"
+        colorScheme="red"
+        borderRadius="md"
         w="full"
-        fontWeight="normal"
+        fontWeight="600"
         isLoading={submitLoading}
+        _hover={{ bg: "#9B2C2C" }}
       >
         Send
       </Button>
@@ -264,9 +267,9 @@ export default function Footer() {
   return (
     <Box
       w="100%"
-      bgColor="gray.50"
-      borderTopWidth="1px"
-      borderTopColor="gray.200"
+      bgColor="gray.900"
+      borderTopWidth="4px"
+      borderTopColor="brand.primary"
       borderTopStyle="solid"
       pb={{ base: 0, xl: 10 }}
       pos="relative"
@@ -286,7 +289,7 @@ export default function Footer() {
           mt={{ base: 8, md: 0 }}
         >
           <Logo size="lg" />
-          <Text fontSize="sm" color="gray.600" maxW="280px" lineHeight="1.6">
+          <Text fontSize="sm" color="gray.400" maxW="280px" lineHeight="1.6">
             {tagline}
           </Text>
           <Box
@@ -295,13 +298,13 @@ export default function Footer() {
             pl={4}
             py={3}
             pr={3}
-            bg="gray.100"
+            bg="gray.800"
             borderRadius="md"
           >
-            <Heading size="sm" mb={2} color="gray.800">
-              Domain For Sale 🌐
+            <Heading size="sm" mb={2} color="white">
+              Domain For Sale
             </Heading>
-            <Text fontSize="sm" color="gray.700" mb={2}>
+            <Text fontSize="sm" color="gray.300" mb={2}>
               This domain is available for purchase. Interested in buying?
             </Text>
             <VStack align="flex-start" spacing={2} fontSize="sm">
@@ -313,15 +316,15 @@ export default function Footer() {
                 rel="noopener"
                 color="brand.primary"
                 fontWeight="600"
-                _hover={{ textDecoration: "underline" }}
+                _hover={{ textDecoration: "underline", color: "red.300" }}
               >
-                → Click here to buy on GoDaddy
+                Buy on GoDaddy
               </ChakraLink>
-              <Text color="gray.600">
-                📧 Message me for negotiation or custom offers
+              <Text color="gray.400">
+                Message me for negotiation or custom offers
               </Text>
-              <Text color="gray.600" fontSize="xs" fontStyle="italic">
-                💰 <strong>Special Offer:</strong> Get 10% discount if you use
+              <Text color="gray.500" fontSize="xs" fontStyle="italic">
+                <strong>Special Offer:</strong> Get 10% discount if you use
                 escrow.com for secure payment. Message me for details!
               </Text>
             </VStack>
@@ -339,7 +342,7 @@ export default function Footer() {
               {siteName} {new Date().getFullYear()}. All rights reserved.
             </Text>
           </HStack>
-          <HStack color="gray.600" spacing={{ base: 2, md: 3 }} fontSize="sm">
+          <HStack color="gray.400" spacing={{ base: 2, md: 3 }} fontSize="sm">
             <ChakraLink
               href={`/redirect?url=https://www.instagram.com/${config.instagram_account}`}
               aria-label={`${siteName} Instagram`}
@@ -349,12 +352,12 @@ export default function Footer() {
               fontWeight="500"
               _hover={{
                 textDecoration: "underline",
-                color: "brand.primary",
+                color: "white",
               }}
             >
               Instagram
             </ChakraLink>
-            <Text color="gray.300">•</Text>
+            <Text color="gray.600">|</Text>
             <ChakraLink
               href={`/redirect?url=https://www.facebook.com/${config.facebook_account}`}
               aria-label={`${siteName} Facebook`}
@@ -363,7 +366,7 @@ export default function Footer() {
               rel="noopener"
               _hover={{
                 textDecoration: "underline",
-                color: "brand.primary",
+                color: "white",
               }}
             >
               Facebook
@@ -379,7 +382,7 @@ export default function Footer() {
           pos="relative"
         >
           <VStack align={{ base: "flex-start" }} spacing={4}>
-            <FooterTitle>BROWSE</FooterTitle>
+            <FooterTitle>SECTIONS</FooterTitle>
             {displayCategories.slice(0, 6).map(category => (
               <FooterLink
                 key={category.slug}

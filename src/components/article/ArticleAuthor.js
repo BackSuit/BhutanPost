@@ -7,11 +7,12 @@ export default function ArticleAuthor({ authors }) {
     <Text
       as={Link}
       href={AUTHOR_ID_ROUTE(author?.slug)}
-      color="yellow.500"
+      color="brand.primary"
       transitionDuration="150ms"
-      _hover={{ color: "yellow.300" }}
+      _hover={{ color: "#9B2C2C" }}
       key={author._id}
       itemProp="author"
+      fontWeight="500"
     >
       {author?.name}
       {authors.length > 1 && index < authors.length - 1 && ", "}

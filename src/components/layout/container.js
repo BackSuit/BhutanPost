@@ -2,7 +2,7 @@ import { Box } from "@chakra-ui/react"
 
 const Container = ({ children }) => {
   return (
-    <Box maxW="1600px" mx="auto" boxShadow="xl">
+    <Box maxW="1600px" mx="auto" boxShadow="none">
       {children}
     </Box>
   )

@@ -9,15 +9,15 @@ const theme = extendTheme({
   },
   colors: {
     brand: {
-      // Warm, bookish color palette
-      primary: "#8B4513", // Saddle brown - leather book binding
-      secondary: "#2F4F4F", // Dark slate - sophisticated ink
-      accent: "#DAA520", // Goldenrod - bookplate gold
-      cream: "#FDFBF7", // Off-white - aged paper
-      parchment: "#F5F1E8", // Parchment - reading background
-      ink: "#1F2937", // Dark ink for text
-      gray: "#6B7280",
-      lightGray: "#9CA3AF",
+      // Modern news website palette
+      primary: "#C53030", // Bold red - breaking news accent
+      secondary: "#1A365D", // Deep navy - authority & trust
+      accent: "#DD6B20", // Warm orange - call-to-action
+      cream: "#FFFFFF", // Clean white - modern look
+      parchment: "#F7FAFC", // Light gray - section backgrounds
+      ink: "#1A202C", // Near black - crisp text
+      gray: "#718096",
+      lightGray: "#A0AEC0",
     },
   },
   breakpoints: {
@@ -37,12 +37,12 @@ const theme = extendTheme({
         primary: {
           bg: "brand.primary",
           color: "white",
-          _hover: { bg: "#7A3D11", transform: "translateY(-1px)" },
+          _hover: { bg: "#9B2C2C", transform: "translateY(-1px)" },
         },
         outline: {
           borderColor: "brand.primary",
           color: "brand.primary",
-          _hover: { bg: "brand.parchment" },
+          _hover: { bg: "red.50" },
         },
       },
     },
@@ -70,52 +70,52 @@ const theme = extendTheme({
     global: {
       "::selection": {
         color: "white",
-        background: "#8B4513",
+        background: "#C53030",
       },
       "::-webkit-scrollbar": {
         width: "0.5em",
       },
       "::-webkit-scrollbar-track": {
-        background: "#F5F1E8",
+        background: "#F7FAFC",
       },
       "::-webkit-scrollbar-thumb": {
         transition: "150ms all ease-in-out",
-        bgColor: "#D4C4A8",
+        bgColor: "#CBD5E0",
         borderRadius: "full",
       },
       "::-webkit-scrollbar-thumb:hover": {
-        background: "#B8A88A",
+        background: "#A0AEC0",
       },
       html: {
         scrollBehavour: "smooth",
       },
       "html, body": {
         overflowX: "hidden",
-        backgroundColor: "#FDFBF7", // Cream background for reading comfort
-        color: "#1F2937",
+        backgroundColor: "#FFFFFF",
+        color: "#1A202C",
         fontSize: "16px",
         lineHeight: "1.7",
       },
       ".booxtore-logo": {
-        fontFamily: "'Georgia', 'Times New Roman', serif",
+        fontFamily: "'Playfair Display', Georgia, serif",
       },
       ".markdown": {
         "div.end-p": {
           marginBottom: 4,
         },
         a: {
-          color: "#8B4513",
+          color: "#C53030",
           fontWeight: "500",
           _hover: {
             textDecoration: "underline",
-            color: "#6B3410",
+            color: "#9B2C2C",
           },
         },
         p: {
           lineHeight: "1.8",
           marginY: 6,
           fontSize: "lg",
-          color: "#374151",
+          color: "#2D3748",
         },
         "h1, h2, h3, h4, h5, h6": {
           fontFamily: "'Playfair Display', Georgia, serif",
@@ -124,7 +124,7 @@ const theme = extendTheme({
           marginBottom: 4,
           textOverflow: "ellipsis",
           lineHeight: "1.3",
-          color: "#1F2937",
+          color: "#1A202C",
         },
         h1: {
           fontSize: "4xl",
@@ -150,8 +150,8 @@ const theme = extendTheme({
           my: 6,
           pos: "relative",
           fontStyle: "italic",
-          color: "#4B5563",
-          bg: "#F9F7F3",
+          color: "#4A5568",
+          bg: "#F7FAFC",
           borderRadius: "md",
           _before: {
             content: "''",
@@ -161,7 +161,7 @@ const theme = extendTheme({
             left: 0,
             bottom: 0,
             width: "4px",
-            bgColor: "#8B4513",
+            bgColor: "#C53030",
             borderRadius: "full",
           },
         },
@@ -172,15 +172,15 @@ const theme = extendTheme({
           borderRadius: "md",
           overflow: "hidden",
           thead: {
-            background: "#F5F1E8",
+            background: "#F7FAFC",
           },
           th: {
             fontWeight: 600,
-            color: "#1F2937",
+            color: "#1A202C",
           },
           "th, td": {
             padding: "0.75em 1em",
-            border: "1px solid #E5E1D8",
+            border: "1px solid #E2E8F0",
           },
         },
         "ol, ul": {
@@ -198,7 +198,7 @@ const theme = extendTheme({
         pointerEvents: "none",
       },
       "#nprogress .bar": {
-        background: "#8B4513",
+        background: "#C53030",
         pos: "fixed",
         zIndex: 99999,
         top: 0,

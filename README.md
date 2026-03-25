@@ -1,13 +1,13 @@
-# Pet Life Store
+# Bhutan Post
 
-Pet Life Store — Your Ultimate Pet Care Destination.
+Bhutan Post — Your Trusted Source for Bhutan News & Stories.
 
-Pet Life Store is a curated pet product discovery site publishing in-depth product reviews, buying guides, care articles and recommendations for dog and cat owners. Configuration is driven by `contents/site-settings.json`.
+Bhutan Post is a modern news website delivering in-depth reporting, analysis, and feature stories covering politics, economy, culture, sports, technology, and lifestyle from Bhutan and beyond. Configuration is driven by `contents/site-settings.json`.
 
 ## Features
 
-- Curated pet product reviews and buying guides
-- Predefined categories (dogs, cats, health, reviews, lifestyle)
+- News articles, analysis, and feature stories
+- Predefined categories (politics, economy, world, culture, sports, technology, opinion, lifestyle)
 - SEO-friendly dynamic `sitemap.xml`, `robots.txt`, and meta tags
 - PWA support and automatic icon generation
 - Uses `contents/site-settings.json` for site title, description, categories and contact info
@@ -25,7 +25,7 @@ Pet Life Store is a curated pet product discovery site publishing in-depth produ
 1. Clone the repository
 
 ```bash
-git clone https://github.com/BackSuit/PetLifeStore.git
+git clone https://github.com/BackSuit/BhutanPost.git
 cd PetLifeStore
 ```
 

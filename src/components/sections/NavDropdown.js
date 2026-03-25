@@ -54,6 +54,9 @@ function NavDropdownGroup({ group }) {
     const slug = category ? category.slug : group.slug
     const href = slug ? CATEGORY_ID_ROUTE(slug) : "/"
 
+    const isActive =
+      router.asPath === href || router.asPath.startsWith(href + "/")
+
     return (
       <Box
         as={Link}
@@ -61,10 +64,24 @@ function NavDropdownGroup({ group }) {
         px={3}
         py={2}
         fontSize="sm"
-        fontWeight={400}
-        color="gray.600"
-        _hover={{ color: "gray.900" }}
+        fontWeight={isActive ? 700 : 500}
+        color={isActive ? "brand.primary" : "gray.700"}
+        _hover={{ color: "brand.primary" }}
         transition="color 0.2s"
+        position="relative"
+        _after={
+          isActive
+            ? {
+                content: '""',
+                position: "absolute",
+                bottom: "0",
+                left: "12px",
+                right: "12px",
+                height: "2px",
+                bg: "brand.primary",
+              }
+            : {}
+        }
       >
         {group.label}
       </Box>
@@ -86,9 +103,9 @@ function NavDropdownGroup({ group }) {
         px={3}
         py={2}
         fontSize="sm"
-        fontWeight={isGroupActive ? 600 : 400}
-        color={isGroupActive ? "gray.900" : "gray.600"}
-        _hover={{ color: "gray.900" }}
+        fontWeight={isGroupActive ? 700 : 500}
+        color={isGroupActive ? "brand.primary" : "gray.700"}
+        _hover={{ color: "brand.primary" }}
         transition="color 0.2s"
         display="flex"
         alignItems="center"
@@ -101,10 +118,10 @@ function NavDropdownGroup({ group }) {
         bg="white"
         border="1px solid"
         borderColor="gray.100"
-        boxShadow="lg"
+        boxShadow="xl"
         borderRadius="md"
         py={2}
-        minW="180px"
+        minW="200px"
         zIndex={20}
       >
         {group.items.map(slug => {
@@ -141,7 +158,7 @@ export default function NavDropdown() {
   const navGroups = config.navbar_groups || []
 
   return (
-    <Flex display={{ base: "none", md: "flex" }} alignItems="center" gap={1}>
+    <Flex display={{ base: "none", md: "flex" }} alignItems="center" gap={0}>
       {/* Home link */}
       <Box
         as={Link}
@@ -149,9 +166,9 @@ export default function NavDropdown() {
         px={3}
         py={2}
         fontSize="sm"
-        fontWeight={400}
-        color="gray.600"
-        _hover={{ color: "gray.900" }}
+        fontWeight={500}
+        color="gray.700"
+        _hover={{ color: "brand.primary" }}
         transition="color 0.2s"
       >
         Home

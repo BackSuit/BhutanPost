@@ -31,11 +31,13 @@ export default function Pagination({ current, pages, link }) {
               <Button
                 as={Link}
                 href={link.as(it.page)}
-                bgColor={it.page === current ? "gray.100" : "white"}
+                bgColor={it.page === current ? "brand.primary" : "white"}
+                color={it.page === current ? "white" : "gray.600"}
                 _hover={{
-                  bgColor: it.page === current ? "gray.200" : "gray.200",
+                  bgColor: it.page === current ? "#9B2C2C" : "gray.100",
                 }}
-                borderRadius="none"
+                borderRadius="md"
+                size="sm"
               >
                 {it.page}
               </Button>

@@ -11,13 +11,13 @@ export default function NavItem({ children, isLast, to = "/", ...rest }) {
         as={Link}
         href={to}
         display="block"
-        color={isActive ? "gray.900" : "gray.600"}
+        color={isActive ? "brand.primary" : "gray.700"}
         cursor="pointer"
-        fontWeight={isActive ? 600 : 400}
+        fontWeight={isActive ? 700 : 500}
         fontSize="sm"
         letterSpacing="0.01em"
         _hover={{
-          color: "gray.900",
+          color: "brand.primary",
         }}
         fontFamily="body"
         mb={{ base: isLast ? 4 : 8, md: 0 }}

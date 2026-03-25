@@ -1,66 +1,72 @@
-import { Text, Box } from "@chakra-ui/layout"
+import { Text, Box, Flex } from "@chakra-ui/layout"
 import Link from "next/link"
 import config from "@/contents/site-settings.json"
 
 export default function Logo() {
-  // Prepare text and colors, splitting words into two lines
-  const logoText = config.logo_text || config.site_title || "Site Logo"
-
-  // split into individual words (ignore extra spaces)
+  const logoText = config.logo_text || config.site_title || "Bhutan Post"
   const words = logoText.split(" ").filter(Boolean)
-
-  // top line should contain first two words (or fewer)
-  const topWords = words.length <= 2 ? words : words.slice(0, 2)
-  const bottomWords = words.length <= 2 ? [] : words.slice(2)
-
-  // allow overriding the color palette from config.legendary later
-  const palette =
-    Array.isArray(config.logo_colors) && config.logo_colors.length > 0
-      ? config.logo_colors
-      : [
-          "brand.primary",
-          "brand.secondary",
-          "brand.accent",
-          "brand.ink",
-          "brand.gray",
-        ]
-  const getColor = index => palette[index % palette.length]
-
-  const renderLine = (wordArray, isBottom) =>
-    wordArray.map((word, idx) => (
-      <Text
-        as="span"
-        key={idx}
-        fontWeight={isBottom ? "900" : "500"}
-        fontStyle={isBottom ? "normal" : "italic"}
-        color={getColor(idx)}
-      >
-        {word}
-        {idx !== wordArray.length - 1 ? " " : ""}
-      </Text>
-    ))
+  const firstWord = words[0] || "Bhutan"
+  const restWords = words.slice(1).join(" ") || "Post"
 
   return (
     <Box
       as={Link}
       href="/"
       display="flex"
-      flexDirection="column"
-      color="black"
-      fontSize="1.25rem"
-      _hover={{ color: "blue.900" }}
-      fontFamily="montserrat, system-ui, open-sans, sans-serif"
+      alignItems="center"
+      _hover={{ opacity: 0.9 }}
       lineHeight={1}
       position="relative"
+      gap={0}
     >
-      <Text as="span" display="block">
-        {renderLine(topWords, false)}
-      </Text>
-      {bottomWords.length > 0 && (
-        <Text as="span" display="block" mt="-3">
-          {renderLine(bottomWords, true)}
+      {/* Icon mark */}
+      <Flex
+        w="36px"
+        h="36px"
+        bg="brand.primary"
+        borderRadius="4px"
+        alignItems="center"
+        justifyContent="center"
+        mr={2}
+        flexShrink={0}
+      >
+        <Text
+          as="span"
+          color="white"
+          fontSize="xl"
+          fontWeight="900"
+          fontFamily="'Playfair Display', Georgia, serif"
+          lineHeight={1}
+        >
+          B
         </Text>
-      )}
+      </Flex>
+      {/* Text */}
+      <Flex direction="column" gap={0}>
+        <Text
+          as="span"
+          fontSize={{ base: "lg", md: "xl" }}
+          fontWeight="800"
+          color="brand.ink"
+          fontFamily="'Playfair Display', Georgia, serif"
+          letterSpacing="-0.02em"
+          lineHeight={1.1}
+        >
+          {firstWord}
+        </Text>
+        <Text
+          as="span"
+          fontSize={{ base: "xs", md: "sm" }}
+          fontWeight="600"
+          color="brand.primary"
+          fontFamily="'Source Sans Pro', sans-serif"
+          letterSpacing="0.15em"
+          textTransform="uppercase"
+          lineHeight={1.2}
+        >
+          {restWords}
+        </Text>
+      </Flex>
     </Box>
   )
 }

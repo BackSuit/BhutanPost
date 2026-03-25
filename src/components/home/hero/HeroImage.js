@@ -13,13 +13,14 @@ export default function HeroImage({ url, alt }) {
       transitionDuration="300ms"
       width={{ base: "full", md: "30vw", lg: "35vw" }}
       bg="gray.50"
-      p={2}
+      p={0}
+      overflow="hidden"
     >
       <Image
         src={url}
         alt={alt}
         fill
-        style={{ objectFit: "contain", objectPosition: "center" }}
+        style={{ objectFit: "cover", objectPosition: "center" }}
         quality={70}
       />
     </Flex>

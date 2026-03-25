@@ -1,58 +1,70 @@
 import dynamic from "next/dynamic"
 import Layout from "@/components/layout"
-import Hero from "@/components/home/hero/index"
-import HomeTeam from "@/components/team/HomeTeam"
 import Meta from "@/components/meta"
-import {
-  fetchFeatured,
-  fetchHero,
-  fetchHomeArticles,
-  fetchManagerial,
-} from "@/libs/api"
+import NewsHero from "@/components/home/NewsHero"
+import { fetchFeatured, fetchHero, fetchHomeArticles } from "@/libs/api"
 
+const FeaturedCarousel = dynamic(() =>
+  import("@/components/home/FeaturedCarousel")
+)
+const CategorySection = dynamic(() =>
+  import("@/components/home/CategorySection")
+)
 const ArticleList = dynamic(() => import("../components/article/ArticleList"))
-const FeaturedArticle = dynamic(() => import("../components/home/featured"))
-const HomeEntertainment = dynamic(() => import("../module/entertainment/home"))
 
-export default function Home({
-  heroArticle,
-  homeArticles,
-  featuredArticles,
-  managerialTeams,
-}) {
+// Group articles by category
+function groupByCategory(articles) {
+  const groups = {}
+  for (const article of articles) {
+    const cat = article.category
+    if (!cat) continue
+    const key = cat.slug
+    if (!groups[key]) {
+      groups[key] = { name: cat.name, slug: cat.slug, articles: [] }
+    }
+    groups[key].articles.push(article)
+  }
+  return Object.values(groups)
+}
+
+export default function Home({ heroArticle, homeArticles, featuredArticles }) {
+  const latestForSidebar = homeArticles.slice(0, 8)
+  const categoryGroups = groupByCategory(homeArticles)
+  // Show up to 3 category sections that have at least 2 articles
+  const displayCategories = categoryGroups
+    .filter(g => g.articles.length >= 2)
+    .slice(0, 3)
+
   return (
     <Layout>
       <Meta url="/" />
       <main>
-        {heroArticle && <Hero article={heroArticle} />}
-        {homeArticles.length > 6 && (
-          <ArticleList articles={homeArticles.slice(0, 6)} />
+        {/* Hero: Main headline + Latest News sidebar */}
+        <NewsHero heroArticle={heroArticle} latestArticles={latestForSidebar} />
+
+        {/* Featured Stories Carousel */}
+        {featuredArticles?.length > 0 && (
+          <FeaturedCarousel articles={featuredArticles} />
         )}
-        {featuredArticles?.[0] && (
-          <FeaturedArticle
-            article={featuredArticles[0]}
-            btnColor="yellow.500"
+
+        {/* Category-based Sections */}
+        {displayCategories.map(group => (
+          <CategorySection
+            key={group.slug}
+            categoryName={group.name}
+            categorySlug={group.slug}
+            articles={group.articles}
           />
-        )}
+        ))}
+
+        {/* More Articles */}
         {homeArticles.length > 12 && (
-          <ArticleList articles={homeArticles.slice(6, 12)} />
-        )}
-        {featuredArticles?.[1] && (
-          <FeaturedArticle
-            article={featuredArticles[1]}
-            btnColor="orange.600"
-            reverse
-          />
-        )}
-        {homeArticles.length > 13 && (
           <ArticleList
-            articles={homeArticles.slice(12, homeArticles.length)}
+            articles={homeArticles.slice(12)}
             moreBtn
             moreBtnHref="/article"
           />
         )}
-        {/* <HomeEntertainment />
-        <HomeTeam managerialTeams={managerialTeams} /> */}
       </main>
     </Layout>
   )
@@ -63,15 +75,13 @@ export async function getStaticProps() {
     const homeArticles = await fetchHomeArticles()
     const heroArticle = await fetchHero()
     const featuredArticles = await fetchFeatured()
-    const managerialTeams = await fetchManagerial()
     return {
       props: {
         homeArticles: homeArticles || [],
         heroArticle: heroArticle || null,
         featuredArticles: featuredArticles || [],
-        managerialTeams: managerialTeams || [],
       },
-      revalidate: 60, // Revalidate every minute
+      revalidate: 60,
     }
   } catch (error) {
     console.error("Error fetching home page data:", error)
@@ -80,7 +90,6 @@ export async function getStaticProps() {
         homeArticles: [],
         heroArticle: null,
         featuredArticles: [],
-        managerialTeams: [],
       },
       revalidate: 30,
     }

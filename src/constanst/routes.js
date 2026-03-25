@@ -49,23 +49,23 @@ export const navigationLinks = [
   },
 ]
 
-// Footer links - organized for a book-focused site
+// Footer links - organized for a news website
 export const footerLinks = [
   { name: "Home", path: HOME_ROUTE },
   { name: "All Articles", path: ARTICLE_ROUTE },
-  { name: "Book Reviews", path: CATEGORY_ID_ROUTE("book-reviews") },
-  { name: "Recommendations", path: CATEGORY_ID_ROUTE("recommendations") },
-  { name: "New Releases", path: CATEGORY_ID_ROUTE("new-releases") },
+  { name: "Politics", path: CATEGORY_ID_ROUTE("politics") },
+  { name: "Economy", path: CATEGORY_ID_ROUTE("economy") },
+  { name: "World", path: CATEGORY_ID_ROUTE("world") },
   { name: "Authors", path: AUTHORS_ROUTE },
   { name: "About Us", path: ABOUT_US_ROUTE },
 ]
 
 // Additional footer category links
 export const footerCategoryLinks = [
-  { name: "Fiction", path: CATEGORY_ID_ROUTE("fiction") },
-  { name: "Non-Fiction", path: CATEGORY_ID_ROUTE("non-fiction") },
-  { name: "Self-Help", path: CATEGORY_ID_ROUTE("self-help") },
-  { name: "Business & Finance", path: CATEGORY_ID_ROUTE("business-finance") },
-  { name: "Classics", path: CATEGORY_ID_ROUTE("classics") },
-  { name: "Children & YA", path: CATEGORY_ID_ROUTE("children-ya") },
+  { name: "Culture", path: CATEGORY_ID_ROUTE("culture") },
+  { name: "Sports", path: CATEGORY_ID_ROUTE("sports") },
+  { name: "Technology", path: CATEGORY_ID_ROUTE("technology") },
+  { name: "Opinion", path: CATEGORY_ID_ROUTE("opinion") },
+  { name: "Lifestyle", path: CATEGORY_ID_ROUTE("lifestyle") },
+  { name: "Tourism", path: CATEGORY_ID_ROUTE("tourism") },
 ]

@@ -23,7 +23,7 @@ export default function FeaturedArticle({ article, reverse, btnColor }) {
             ref={ref}
             height="full"
             width="full"
-            backgroundColor="gray.50"
+            backgroundColor="white"
             flexDirection={{
               base: "column",
               lg: reverse ? "row-reverse" : "row",
@@ -32,6 +32,8 @@ export default function FeaturedArticle({ article, reverse, btnColor }) {
             borderColor="gray.100"
             position="relative"
             marginY={{ md: 10 }}
+            borderRadius="md"
+            overflow="hidden"
           >
             {/* Image */}
             <Box
@@ -53,7 +55,7 @@ export default function FeaturedArticle({ article, reverse, btnColor }) {
                     width={360}
                     height={360}
                     style={{
-                      objectFit: "contain",
+                      objectFit: "cover",
                       objectPosition: "center",
                       width: "100%",
                       height: "auto",
@@ -90,12 +92,12 @@ export default function FeaturedArticle({ article, reverse, btnColor }) {
               />
               <PrimaryButton
                 href={ARTICLE_ID_ROUTE(article?.slug)}
-                colorScheme="blue"
+                bgColor="brand.primary"
                 fontSize={textSize}
-                bgColor={btnColor}
                 color="white"
+                _hover={{ bg: "#9B2C2C" }}
               >
-                Read Now
+                Read Full Story
               </PrimaryButton>
             </VStack>
           </Flex>

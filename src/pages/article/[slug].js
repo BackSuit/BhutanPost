@@ -14,6 +14,9 @@ import Layout from "@/components/layout"
 import ArticleShare from "@/components/article/ArticleShare"
 import Meta from "@/components/meta"
 const Comment = dynamic(() => import("@/components/comment"))
+const RelatedArticles = dynamic(() =>
+  import("@/components/article/RelatedArticles")
+)
 
 // Library Components
 import { Avatar, Icon, Stack, Text } from "@chakra-ui/react"
@@ -22,12 +25,12 @@ import { FiUser } from "react-icons/fi"
 // Libs
 import ArticleMeta from "@/components/meta/ArticleMeta"
 import config from "@/contents/site-settings.json"
-import { fetchArticle, fetchArticleSlugs } from "@/libs/api"
+import { fetchArticle, fetchArticleSlugs, fetchByCategory } from "@/libs/api"
 import markdownToHtml from "@/libs/markdownToHTML"
 import { formatDate } from "@/libs/date"
 import { ARTICLE_ID_ROUTE } from "src/constanst/routes"
 
-export default function Article({ article }) {
+export default function Article({ article, relatedArticles }) {
   const [comments, setComments] = useState([])
   const { title, slug, excerpt, date, category, authors, image_url, content } =
     article
@@ -182,6 +185,7 @@ export default function Article({ article }) {
           </header>
           <ArticleBody body={content} />
           <ArticleShare url={fullUrl} />
+          <RelatedArticles articles={relatedArticles} />
           <div ref={ref}>
             {inView && (
               <Comment
@@ -207,12 +211,30 @@ export async function getStaticProps({ params }) {
   }
 
   const content = await markdownToHtml(article.content || "")
+
+  // Fetch related articles from the same category
+  let relatedArticles = []
+  if (article.category?.slug) {
+    try {
+      const { articles: catArticles } = await fetchByCategory(
+        article.category.slug
+      )
+      // Exclude the current article
+      relatedArticles = (catArticles || [])
+        .filter(a => a.slug !== params.slug)
+        .slice(0, 4)
+    } catch (e) {
+      // Silently fail - related articles are non-critical
+    }
+  }
+
   return {
     props: {
       article: {
         ...article,
         content,
       },
+      relatedArticles,
     },
     revalidate: 60, // Revalidate every 60 seconds
   }

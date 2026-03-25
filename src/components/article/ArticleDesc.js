@@ -12,7 +12,7 @@ export default function ArticleDesc({}) {
       pl="4"
       borderLeftWidth="5px"
       borderLeftStyle="solid"
-      borderLeftColor="teal.200"
+      borderLeftColor="brand.primary"
       letterSpacing="0.8px"
     />
   )

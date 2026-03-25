@@ -46,13 +46,15 @@ const Article = ({ article }) => {
           pos="relative"
           ref={ref}
           bg="white"
-          borderRadius="lg"
+          borderRadius="md"
           overflow="hidden"
-          boxShadow="0 1px 3px rgba(0,0,0,0.05)"
+          border="1px solid"
+          borderColor="gray.100"
           transition="all 0.3s ease"
           _hover={{
-            boxShadow: "0 8px 25px rgba(0,0,0,0.08)",
-            transform: "translateY(-4px)",
+            boxShadow: "0 8px 30px rgba(0,0,0,0.1)",
+            transform: "translateY(-2px)",
+            borderColor: "gray.200",
           }}
         >
           <Box
@@ -61,9 +63,9 @@ const Article = ({ article }) => {
             display="flex"
             alignItems="center"
             justifyContent="center"
-            bg="brand.parchment"
+            bg="gray.50"
             position="relative"
-            p={3}
+            overflow="hidden"
           >
             <Skeleton height="100%" width="100%" isLoaded={inView}>
               {inView && image_url && (
@@ -71,7 +73,7 @@ const Article = ({ article }) => {
                   width={500}
                   height={500}
                   style={{
-                    objectFit: "contain",
+                    objectFit: "cover",
                     width: "100%",
                     height: "auto",
                     maxHeight: "280px",
@@ -90,21 +92,28 @@ const Article = ({ article }) => {
             py={4}
             pos="relative"
             alignItems="flex-start"
-            px={{ base: 0, md: 4, xl: "1rem" }}
+            px={{ base: 3, md: 4, xl: "1rem" }}
           >
-            <Flex as="span" alignItems="center" flexWrap="wrap">
+            <Flex as="span" alignItems="center" flexWrap="wrap" gap={2}>
               {category && (
-                <ArticleLink href={CATEGORY_ID_ROUTE(category.slug)}>
+                <Text
+                  as={Link}
+                  href={CATEGORY_ID_ROUTE(category.slug)}
+                  fontSize="xs"
+                  fontWeight="700"
+                  color="brand.primary"
+                  textTransform="uppercase"
+                  letterSpacing="0.06em"
+                  _hover={{ textDecoration: "underline" }}
+                >
                   {category.name}
-                </ArticleLink>
+                </Text>
               )}
-              <Text w={6} mx={1.5} h={0.4} bgColor="gray.400" />
               {authors &&
                 authors.map((author, index) => (
                   <ArticleLink
                     key={author._id}
                     href={AUTHOR_ID_ROUTE(author.slug)}
-                    paddingLeft={authors.length > 1 && index === 0 ? 0 : 1}
                   >
                     {author.name}
                     {authors.length > 0 && index < authors.length - 1 && ", "}
@@ -116,11 +125,11 @@ const Article = ({ article }) => {
               href={ARTICLE_ID_ROUTE(slug)}
               className="article-title"
               fontSize={{ base: "lg", lg: "xl" }}
-              fontWeight={600}
+              fontWeight={700}
               fontFamily="heading"
               maxW="95%"
               mr="auto"
-              color="gray.800"
+              color="gray.900"
               lineHeight="1.3"
               _hover={{
                 color: "brand.primary",

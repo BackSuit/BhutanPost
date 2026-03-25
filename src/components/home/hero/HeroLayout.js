@@ -7,8 +7,10 @@ export default function HeroLayout({ children }) {
         base: "column-reverse",
         md: "row",
       }}
-      bgColor="gray.50"
+      bgColor="white"
       gap={0}
+      borderBottom="1px solid"
+      borderBottomColor="gray.100"
     >
       {children}
     </Stack>

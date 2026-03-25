@@ -21,7 +21,7 @@ export function Hero({ article }) {
         flex={1}
         pl={{ base: 0, xl: 8 }}
         py={{ base: 8, lg: 10, xl: 20 }}
-        bgColor="gray.50"
+        bgColor="white"
         justifyContent="center"
       >
         <HeroAuthorCategory
@@ -34,10 +34,12 @@ export function Hero({ article }) {
         <PrimaryButton
           href={ARTICLE_ID_ROUTE(article?.slug)}
           rightIcon={<ArrowForwardIcon />}
-          colorScheme="yellow"
+          bgColor="brand.primary"
+          color="white"
           fontSize={textSize}
+          _hover={{ bg: "#9B2C2C" }}
         >
-          Read Now
+          Read Full Story
         </PrimaryButton>
       </VStack>
       <HeroImage alt={article?.title} url={url} />

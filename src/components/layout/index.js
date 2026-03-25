@@ -12,10 +12,14 @@ const Layout = ({ children }) => {
         <link rel="manifest" href="/manifest.json" />
         <meta name="msapplication-TileColor" content="#ffffff" />
         <meta name="msapplication-TileImage" content="/ms-icon-144x144.png" />
-        <meta name="theme-color" content="#ffffff" />
+        <meta name="theme-color" content="#C53030" />
       </Head>
       <Header />
-      <Box marginTop={{ base: "65px", lg: "86px" }} id="__app" pos="relative">
+      <Box
+        marginTop={{ base: "60px", md: "90px", lg: "110px" }}
+        id="__app"
+        pos="relative"
+      >
         {children}
       </Box>
       <Footer />

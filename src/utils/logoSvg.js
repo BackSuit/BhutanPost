@@ -11,18 +11,18 @@
 
 function generateLogoSvg({
   size = 100,
-  bgColor = "#FDFBF7",
+  bgColor = "#FFFFFF",
   palette = [],
   logoText = "Site Logo",
   includeBg = true,
 } = {}) {
   // default palette matches theme.colors.brand values
   const defaultPalette = [
-    "#8B4513", // brand.primary
-    "#2F4F4F", // brand.secondary
-    "#DAA520", // brand.accent
-    "#1F2937", // brand.ink
-    "#6B7280", // brand.gray
+    "#C53030", // brand.primary - news red
+    "#1A202C", // brand.secondary - dark navy
+    "#DD6B20", // brand.accent - warm orange
+    "#1A202C", // brand.ink
+    "#718096", // brand.gray
   ]
   const colors = palette && palette.length ? palette : defaultPalette
 

@@ -4,18 +4,24 @@ import { useRouter } from "next/router"
 import { CATEGORY_ID_ROUTE } from "src/constanst/routes"
 
 const NavButton = ({ children, href, asPath }) => {
+  const isActive = asPath === href
   return (
     <Button
       as={Link}
       href={href}
       variant="ghost"
-      borderRadius={false}
+      borderRadius="md"
       cursor="pointer"
-      fontWeight="normal"
+      fontWeight={isActive ? "600" : "normal"}
       position="relative"
-      color={asPath === href ? "black" : "gray.400"}
-      bg={asPath === href ? "gray.200" : "none"}
+      color={isActive ? "white" : "gray.600"}
+      bg={isActive ? "brand.primary" : "none"}
       outline="none"
+      fontSize="sm"
+      _hover={{
+        bg: isActive ? "brand.primary" : "gray.100",
+        color: isActive ? "white" : "gray.800",
+      }}
     >
       {children}
     </Button>

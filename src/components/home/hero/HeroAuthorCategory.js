@@ -10,6 +10,27 @@ export default function HeroAuthorCategory({
 }) {
   return (
     <Flex mb="1.2" d="flex" alignItems="center" color="brand.gray" {...rest}>
+      {category && (
+        <>
+          <Text
+            as={Link}
+            href={CATEGORY_ID_ROUTE(category?.slug)}
+            px={2}
+            py={0.5}
+            bg="brand.primary"
+            color="white"
+            fontSize="xs"
+            fontWeight="700"
+            textTransform="uppercase"
+            letterSpacing="0.08em"
+            borderRadius="sm"
+            _hover={{ bg: "#9B2C2C" }}
+          >
+            {category?.name}
+          </Text>
+          <Text w={6} mx={2} h={0.4} bgColor="gray.300" />
+        </>
+      )}
       {authors &&
         authors.map((author, index) => (
           <Text
@@ -20,22 +41,12 @@ export default function HeroAuthorCategory({
             display="inline-flex"
             overflowY="hidden"
             fontSize={textSize}
+            fontWeight="500"
           >
             {author?.name}
             {authors.length > 1 && index < authors.length - 1 && ", "}
           </Text>
         ))}
-      <Text w={10} mx={1} h={0.4} bgColor="gray.400" />
-      <Text
-        as={Link}
-        href={CATEGORY_ID_ROUTE(category?.slug)}
-        px={1}
-        d="inline-flex"
-        overflowY="hidden"
-        fontSize={textSize}
-      >
-        {category?.name}
-      </Text>
     </Flex>
   )
 }

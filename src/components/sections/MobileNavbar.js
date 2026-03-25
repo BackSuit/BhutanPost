@@ -90,8 +90,8 @@ export default function MobileNavbar({ isOpen, onClose }) {
       <DrawerContent bg="white">
         <DrawerHeader
           py={4}
-          borderBottomWidth="1px"
-          borderBottomColor="gray.100"
+          borderBottomWidth="3px"
+          borderBottomColor="brand.primary"
         >
           <Flex alignItems="center">
             <Heading size="md" fontWeight="600" color="gray.800">

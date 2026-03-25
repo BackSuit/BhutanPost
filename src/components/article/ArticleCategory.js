@@ -11,15 +11,19 @@ export default function ArticleCategory({ category }) {
       <Text
         as={Link}
         href={CATEGORY_ID_ROUTE(category?.slug)}
-        color="blue.800"
+        color="white"
         mr="2"
         py="0.5"
         px="2"
-        borderRadius="2px"
-        backgroundColor="yellow.200"
+        borderRadius="sm"
+        backgroundColor="brand.primary"
+        fontSize="sm"
+        fontWeight="600"
+        textTransform="uppercase"
+        letterSpacing="0.05em"
         transition="background-color 200ms ease-in-out"
         _hover={{
-          backgroundColor: "yellow.300",
+          backgroundColor: "#9B2C2C",
         }}
       >
         {category?.name}
