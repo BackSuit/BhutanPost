@@ -288,7 +288,7 @@ export default function Footer() {
           spacing={6}
           mt={{ base: 8, md: 0 }}
         >
-          <Logo size="lg" />
+          <Logo isLight />
           <Text fontSize="sm" color="gray.400" maxW="280px" lineHeight="1.6">
             {tagline}
           </Text>

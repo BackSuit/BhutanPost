@@ -112,10 +112,11 @@ const theme = extendTheme({
           },
         },
         p: {
-          lineHeight: "1.8",
+          lineHeight: "1.9",
           marginY: 6,
-          fontSize: "lg",
+          fontSize: "1.1rem",
           color: "#2D3748",
+          fontFamily: "'Lora', Georgia, serif",
         },
         "h1, h2, h3, h4, h5, h6": {
           fontFamily: "'Playfair Display', Georgia, serif",

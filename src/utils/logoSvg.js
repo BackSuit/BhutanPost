@@ -1,88 +1,40 @@
 /**
- * Shared logo SVG generator.
- * Used by generate-icons.js script and any other place needing a standalone SVG.
+ * Bhutan Post logo SVG generator — shared between generate-icons.js and Logo.js.
  *
- * This implementation mirrors the logic in src/components/sections/Logo.js:
- *   - Split words, top line holds first two words, rest go bottom.
- *   - Each word gets a color from a palette (configurable).
- *   - Lines are vertically stacked with a small negative gap.
- *   - Defaults use the Chakra theme's brand colors.
+ * Uses the EXACT same 44x44 viewBox geometry as MountainMark in Logo.js.
+ * SVG's viewBox attribute handles scaling to any output size automatically.
+ *
+ * Pure CommonJS — safe to require() in Node.js scripts.
+ * fill-opacity attributes used instead of rgba() for maximum SVG renderer compat.
  */
 
-function generateLogoSvg({
-  size = 100,
-  bgColor = "#FFFFFF",
-  palette = [],
-  logoText = "Site Logo",
-  includeBg = true,
-} = {}) {
-  // default palette matches theme.colors.brand values
-  const defaultPalette = [
-    "#C53030", // brand.primary - news red
-    "#1A202C", // brand.secondary - dark navy
-    "#DD6B20", // brand.accent - warm orange
-    "#1A202C", // brand.ink
-    "#718096", // brand.gray
-  ]
-  const colors = palette && palette.length ? palette : defaultPalette
-
-  const getColor = index => colors[index % colors.length]
-
-  const words = logoText.split(" ").filter(Boolean)
-  const topWords = words.length <= 2 ? words : words.slice(0, 2)
-  const bottomWords = words.length <= 2 ? [] : words.slice(2)
-
-  // calculate font sizes/spacing
-  const topFontSize = Math.floor(size * 0.25)
-  const bottomFontSize = Math.floor(size * 0.3)
-  const spacing = Math.round(size * 0.03) // negative gap between lines
-
-  const totalHeight = topFontSize + bottomFontSize - spacing
-  const startY = (size - totalHeight) / 2
-
-  const topBaseline = startY + topFontSize * 0.82
-  const bottomBaseline = startY + topFontSize + bottomFontSize * 0.82 - spacing
-
-  function renderLine(wordsArray, y, isBottom) {
-    const fontSize = isBottom ? bottomFontSize : topFontSize
-    const fontWeight = isBottom ? "900" : "500"
-    const fontStyle = isBottom ? "" : 'font-style="italic"'
-    const tspan = wordsArray
-      .map((w, idx) => {
-        const space = idx !== wordsArray.length - 1 ? " " : ""
-        return `<tspan fill="${getColor(idx)}">${w}${space}</tspan>`
-      })
-      .join("")
-    return `
-      <text
-        x="${size / 2}"
-        y="${y}"
-        font-family="Georgia, 'Times New Roman', serif"
-        font-size="${fontSize}"
-        font-weight="${fontWeight}"
-        ${fontStyle}
-        text-anchor="middle"
-      >${tspan}</text>`
-  }
-
-  const background = includeBg
-    ? `<rect width="${size}" height="${size}" fill="${bgColor}"/>`
-    : ""
-
-  const topSvg = renderLine(topWords, topBaseline, false)
-  const bottomSvg =
-    bottomWords.length > 0 ? renderLine(bottomWords, bottomBaseline, true) : ""
-
-  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
-  ${background}
-  ${topSvg}
-  ${bottomSvg}
-</svg>`
+function getMountainMarkSvg(size, bgColor) {
+  var s = size || 44
+  var bg = bgColor || "#C53030"
+  return (
+    '<svg width="' +
+    s +
+    '" height="' +
+    s +
+    '" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">\n' +
+    '  <rect width="44" height="44" rx="7" fill="' +
+    bg +
+    '"/>\n' +
+    '  <path d="M5 34 L16 9 L27 34Z" fill="white" fill-opacity="0.88"/>\n' +
+    '  <path d="M22 34 L32 17 L42 34Z" fill="white" fill-opacity="0.55"/>\n' +
+    '  <path d="M16 9 L12.5 16 L19.5 16Z" fill="white"/>\n' +
+    '  <path d="M32 17 L29.5 22 L34.5 22Z" fill="white" fill-opacity="0.9"/>\n' +
+    "</svg>"
+  )
 }
 
-// Export for both CommonJS (Node.js scripts) and ES modules (React components)
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = { generateLogoSvg }
+// generateLogoSvg kept for backward compatibility
+function generateLogoSvg(opts) {
+  var o = opts || {}
+  return getMountainMarkSvg(o.size || 100, o.bgColor || "#C53030")
 }
 
-export { generateLogoSvg }
+module.exports = {
+  getMountainMarkSvg: getMountainMarkSvg,
+  generateLogoSvg: generateLogoSvg,
+}

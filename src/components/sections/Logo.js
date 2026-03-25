@@ -1,72 +1,75 @@
-import { Text, Box, Flex } from "@chakra-ui/layout"
+import { Text, Box, VStack } from "@chakra-ui/layout"
+import { Flex } from "@chakra-ui/react"
 import Link from "next/link"
-import config from "@/contents/site-settings.json"
 
-export default function Logo() {
-  const logoText = config.logo_text || config.site_title || "Bhutan Post"
-  const words = logoText.split(" ").filter(Boolean)
-  const firstWord = words[0] || "Bhutan"
-  const restWords = words.slice(1).join(" ") || "Post"
+// Bhutan mountain-peak icon mark — inline SVG, no external img needed
+function MountainMark() {
+  return (
+    <svg
+      width="44"
+      height="44"
+      viewBox="0 0 44 44"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      {/* Red badge background */}
+      <rect width="44" height="44" rx="7" fill="#C53030" />
+      {/* Left (taller) mountain */}
+      <path d="M5 34 L16 9 L27 34Z" fill="rgba(255,255,255,0.88)" />
+      {/* Right (shorter) mountain */}
+      <path d="M22 34 L32 17 L42 34Z" fill="rgba(255,255,255,0.55)" />
+      {/* Snow cap on left peak */}
+      <path d="M16 9 L12.5 16 L19.5 16Z" fill="white" />
+      {/* Snow cap on right peak */}
+      <path d="M32 17 L29.5 22 L34.5 22Z" fill="rgba(255,255,255,0.9)" />
+    </svg>
+  )
+}
 
+/**
+ * Logo component.
+ * @param {boolean} isLight  – if true, renders white text (for dark backgrounds like footer)
+ */
+export default function Logo({ isLight = false }) {
   return (
     <Box
       as={Link}
       href="/"
       display="flex"
       alignItems="center"
-      _hover={{ opacity: 0.9 }}
+      gap={2}
+      _hover={{ opacity: 0.85 }}
       lineHeight={1}
-      position="relative"
-      gap={0}
+      flexShrink={0}
     >
-      {/* Icon mark */}
-      <Flex
-        w="36px"
-        h="36px"
-        bg="brand.primary"
-        borderRadius="4px"
-        alignItems="center"
-        justifyContent="center"
-        mr={2}
-        flexShrink={0}
-      >
-        <Text
-          as="span"
-          color="white"
-          fontSize="xl"
-          fontWeight="900"
-          fontFamily="'Playfair Display', Georgia, serif"
-          lineHeight={1}
-        >
-          B
-        </Text>
-      </Flex>
-      {/* Text */}
-      <Flex direction="column" gap={0}>
+      <MountainMark />
+      <VStack spacing={0} align="flex-start">
         <Text
           as="span"
           fontSize={{ base: "lg", md: "xl" }}
-          fontWeight="800"
-          color="brand.ink"
-          fontFamily="'Playfair Display', Georgia, serif"
-          letterSpacing="-0.02em"
-          lineHeight={1.1}
+          fontWeight="900"
+          fontFamily="'Montserrat', 'Arial Black', sans-serif"
+          letterSpacing="-0.03em"
+          color={isLight ? "white" : "gray.900"}
+          lineHeight={1}
         >
-          {firstWord}
+          BHUTAN
         </Text>
         <Text
           as="span"
           fontSize={{ base: "xs", md: "sm" }}
-          fontWeight="600"
-          color="brand.primary"
-          fontFamily="'Source Sans Pro', sans-serif"
-          letterSpacing="0.15em"
+          fontWeight="400"
+          fontStyle="italic"
+          fontFamily="'Lora', Georgia, serif"
+          letterSpacing="0.2em"
+          color={isLight ? "gray.300" : "brand.primary"}
+          lineHeight={1.3}
           textTransform="uppercase"
-          lineHeight={1.2}
         >
-          {restWords}
+          Post
         </Text>
-      </Flex>
+      </VStack>
     </Box>
   )
 }

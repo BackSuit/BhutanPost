@@ -16,7 +16,7 @@ const Layout = ({ children }) => {
       </Head>
       <Header />
       <Box
-        marginTop={{ base: "60px", md: "90px", lg: "110px" }}
+        marginTop={{ base: "60px", md: "118px", lg: "138px" }}
         id="__app"
         pos="relative"
       >

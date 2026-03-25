@@ -22,16 +22,13 @@ if (!fs.existsSync(OUTPUT_DIR)) {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true })
 }
 
-// Function to generate text-based icon using SVG
-const { generateLogoSvg } = require("../src/utils/logoSvg")
+// Logo SVG — same mountain-peak geometry as Logo.js's MountainMark
+const { getMountainMarkSvg } = require("../src/utils/logoSvg")
 
-async function generateIcon(text, size, outputPath) {
-  const svg = generateLogoSvg({
-    logoText: text,
-    size,
-    palette: siteSettings.logo_colors,
-    bgColor: siteSettings.logo_bg_color || "#FFFFFF",
-  })
+async function generateIcon(size, outputPath) {
+  // Use the red badge colour from site-settings or fall back to brand.primary
+  const bgColor = siteSettings.logo_bg_color || "#C53030"
+  const svg = getMountainMarkSvg(size, bgColor)
 
   // Convert SVG to PNG using sharp
   await sharp(Buffer.from(svg)).resize(size, size).png().toFile(outputPath)
@@ -46,7 +43,7 @@ async function generateAllIcons() {
     for (const icon of ICON_SIZES) {
       const outputPath = path.join(OUTPUT_DIR, icon.name)
       console.log(`⏳ Generating ${icon.name} (${icon.size}x${icon.size})...`)
-      await generateIcon(SITE_NAME, icon.size, outputPath)
+      await generateIcon(icon.size, outputPath)
       console.log(`✅ Created ${icon.name}`)
     }
 

@@ -18,6 +18,7 @@ import Logo from "./Logo"
 import MobileNavbar from "./MobileNavbar"
 import NavDropdown from "./NavDropdown"
 import AuthButton from "../auth/AuthButton"
+import StockTicker from "./StockTicker"
 
 function SearchBar() {
   const router = useRouter()
@@ -115,6 +116,9 @@ export default function Header() {
     <Box pos="fixed" top={0} left={0} right={0} zIndex="10" id="header-nav">
       {/* Top date bar */}
       <DateBar />
+
+      {/* RSEBL Stock market ticker */}
+      <StockTicker />
 
       {/* Main header */}
       <Flex
