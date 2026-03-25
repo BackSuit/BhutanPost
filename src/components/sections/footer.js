@@ -371,6 +371,22 @@ export default function Footer() {
             >
               Facebook
             </ChakraLink>
+            {config.github_url && config.github_url.trim() !== "" && (
+              <>
+                <Text color="gray.600">|</Text>
+                <ChakraLink
+                  href={`/redirect?url=${config.github_url}`}
+                  aria-label={`${siteName} GitHub`}
+                  isExternal
+                  rel="noopener"
+                  cursor="pointer"
+                  fontWeight="500"
+                  _hover={{ textDecoration: "underline", color: "white" }}
+                >
+                  GitHub — Open source & free to use
+                </ChakraLink>
+              </>
+            )}
           </HStack>
         </VStack>
 
