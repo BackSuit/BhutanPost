@@ -3,10 +3,11 @@
   "site_title": "Bhutan Post",
   "logo_text": "Bhutan Post",
   "tagline": "Your Trusted Source for Bhutan News & Stories",
-  "instagram_account": "bhutanpost",
+  "instagram_account": "",
   "twitter_account": "",
-  "github_url": "https://github.com/BackSuit/BhutanPost",
-  "facebook_account": "bhutanpost",
+  "github": "BackSuit/BhutanPost",
+  "facebook_account": "profile.php?id=61578511603483",
+  "whatsapp": "+9779840889975",
   "base_url": "https://bhutanpost.com",
   "site_keywords": [
     {

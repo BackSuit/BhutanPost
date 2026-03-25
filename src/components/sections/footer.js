@@ -200,6 +200,48 @@ export default function Footer() {
     }
   }, [session])
 
+  // Build social links list only for non-empty values
+  const socialLinks = []
+  if (config.instagram_account && config.instagram_account.trim() !== "") {
+    socialLinks.push({
+      label: "Instagram",
+      href: `/redirect?url=https://www.instagram.com/${config.instagram_account}`,
+    })
+  }
+  if (config.twitter_account && config.twitter_account.trim() !== "") {
+    const tw = config.twitter_account.trim()
+    const twUrl = tw.startsWith("http")
+      ? tw
+      : `https://twitter.com/${tw.replace(/^@/, "")}`
+    socialLinks.push({ label: "Twitter", href: `/redirect?url=${twUrl}` })
+  }
+  if (config.facebook_account && config.facebook_account.trim() !== "") {
+    socialLinks.push({
+      label: "Facebook",
+      href: `/redirect?url=https://www.facebook.com/${config.facebook_account}`,
+    })
+  }
+  if (
+    (config.whatsapp && config.whatsapp.trim() !== "") ||
+    (config.whatsapp_number && config.whatsapp_number.trim() !== "")
+  ) {
+    const waRaw = (config.whatsapp || config.whatsapp_number).trim()
+    const waUrl = waRaw.startsWith("http")
+      ? waRaw
+      : `https://wa.me/${waRaw.replace(/[^+\d]/g, "").replace(/^\+/, "")}`
+    socialLinks.push({ label: "WhatsApp", href: `/redirect?url=${waUrl}` })
+  }
+  if (config.github && config.github.trim() !== "") {
+    const gh = config.github.trim()
+    const ghUrl = gh.startsWith("http")
+      ? gh
+      : `https://github.com/${gh.replace(/^@/, "")}`
+    socialLinks.push({
+      label: "GitHub — Open source & free to use",
+      href: `/redirect?url=${ghUrl}`,
+    })
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     setSubmitLoading(true)
@@ -330,63 +372,40 @@ export default function Footer() {
             </VStack>
           </Box>
           <HStack
-            spacing={1}
+            spacing={2}
             align="center"
-            color="gray.500"
+            color="whiteAlpha.900"
             order={{ base: 1, md: 0 }}
             fontSize={{ base: "xs", lg: "sm" }}
             wordBreak="break-word"
           >
-            <Icon aria-label="copyright icon" as={MdCopyright} />
-            <Text>
-              {siteName} {new Date().getFullYear()}. All rights reserved.
+            <Icon aria-label="copyright icon" as={MdCopyright} color="white" />
+            <Text
+              color="white"
+              fontWeight="600"
+              fontSize={{ base: "xs", lg: "sm" }}
+              ml={1}
+            >
+              Bhutan Post {new Date().getFullYear()}. All rights reserved.
             </Text>
           </HStack>
           <HStack color="gray.400" spacing={{ base: 2, md: 3 }} fontSize="sm">
-            <ChakraLink
-              href={`/redirect?url=https://www.instagram.com/${config.instagram_account}`}
-              aria-label={`${siteName} Instagram`}
-              isExternal
-              rel="noopener"
-              cursor="pointer"
-              fontWeight="500"
-              _hover={{
-                textDecoration: "underline",
-                color: "white",
-              }}
-            >
-              Instagram
-            </ChakraLink>
-            <Text color="gray.600">|</Text>
-            <ChakraLink
-              href={`/redirect?url=https://www.facebook.com/${config.facebook_account}`}
-              aria-label={`${siteName} Facebook`}
-              cursor="pointer"
-              fontWeight="500"
-              rel="noopener"
-              _hover={{
-                textDecoration: "underline",
-                color: "white",
-              }}
-            >
-              Facebook
-            </ChakraLink>
-            {config.github_url && config.github_url.trim() !== "" && (
-              <>
-                <Text color="gray.600">|</Text>
+            {socialLinks.map((s, idx) => (
+              <React.Fragment key={s.href}>
+                {idx > 0 && <Text color="gray.600">|</Text>}
                 <ChakraLink
-                  href={`/redirect?url=${config.github_url}`}
-                  aria-label={`${siteName} GitHub`}
+                  href={s.href}
+                  aria-label={`${siteName} ${s.label}`}
                   isExternal
                   rel="noopener"
                   cursor="pointer"
                   fontWeight="500"
                   _hover={{ textDecoration: "underline", color: "white" }}
                 >
-                  GitHub — Open source & free to use
+                  {s.label}
                 </ChakraLink>
-              </>
-            )}
+              </React.Fragment>
+            ))}
           </HStack>
         </VStack>
 
