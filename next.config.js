@@ -23,7 +23,8 @@ const nextConfig = {
         hostname: "**",
       },
     ],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    // Removed 4K/rare sizes to prevent "Transformation Spikes"
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     formats: ["image/webp"],
     // Set to 1 year (31,536,000 seconds) to save your quota
