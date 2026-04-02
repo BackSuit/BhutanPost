@@ -29,35 +29,43 @@ export default function ArticlesByCategory({ articles, category, pagination }) {
 
 export async function getStaticProps({ params }) {
   const postsPerPage = config.posts_per_page || 9
-  const { category } = await fetchByCategory(params.slug)
 
-  // If category doesn't exist, return 404
-  if (!category) {
+  try {
+    const { category } = await fetchByCategory(params.slug)
+
+    // If category doesn't exist, return 404
+    if (!category) {
+      return {
+        notFound: true,
+      }
+    }
+
+    const [articles, totalArticles] = await Promise.all([
+      fetchPaginated(1, params.slug),
+      countArticlesByCategory(params.slug),
+    ])
+
+    const pagination = {
+      current: 1,
+      pages: Math.ceil(totalArticles / postsPerPage),
+    }
+
+    return {
+      props: {
+        articles: articles || [],
+        category: {
+          name: category.name || params.slug,
+          slug: category.slug || params.slug,
+        },
+        pagination,
+      },
+      revalidate: 60,
+    }
+  } catch (error) {
+    console.error("Error fetching category page data:", error)
     return {
       notFound: true,
     }
-  }
-
-  const [articles, totalArticles] = await Promise.all([
-    fetchPaginated(1, params.slug),
-    countArticlesByCategory(params.slug),
-  ])
-
-  const pagination = {
-    current: 1,
-    pages: Math.ceil(totalArticles / postsPerPage),
-  }
-
-  return {
-    props: {
-      articles: articles || [],
-      category: {
-        name: category.name || params.slug,
-        slug: category.slug || params.slug,
-      },
-      pagination,
-    },
-    revalidate: 60,
   }
 }
 

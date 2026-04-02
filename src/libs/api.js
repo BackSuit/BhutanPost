@@ -93,8 +93,13 @@ export async function fetchArticles(params = {}) {
     order,
   })
 
-  const data = await fetchAPI(`/api/v1/articles?${queryParams}`)
-  return (data.articles || []).map(normalizeArticle)
+  try {
+    const data = await fetchAPI(`/api/v1/articles?${queryParams}`)
+    return (data.articles || []).map(normalizeArticle)
+  } catch (error) {
+    console.error("Error fetching articles:", error)
+    return []
+  }
 }
 
 export async function fetchHomeArticles(params = {}) {
@@ -117,8 +122,13 @@ export async function fetchFeatured() {
     order: "desc",
   })
 
-  const data = await fetchAPI(`/api/v1/articles?${queryParams}`)
-  return (data.articles || []).map(normalizeArticle)
+  try {
+    const data = await fetchAPI(`/api/v1/articles?${queryParams}`)
+    return (data.articles || []).map(normalizeArticle)
+  } catch (error) {
+    console.error("Error fetching featured articles:", error)
+    return []
+  }
 }
 
 export async function fetchHero() {
@@ -130,34 +140,44 @@ export async function fetchHero() {
     order: "desc",
   })
 
-  const data = await fetchAPI(`/api/v1/articles?${queryParams}`)
-  return data.articles && data.articles.length > 0
-    ? normalizeArticle(data.articles[0])
-    : null
+  try {
+    const data = await fetchAPI(`/api/v1/articles?${queryParams}`)
+    return data.articles && data.articles.length > 0
+      ? normalizeArticle(data.articles[0])
+      : null
+  } catch (error) {
+    console.error("Error fetching hero article:", error)
+    return null
+  }
 }
 
 export async function fetchByCategory(slug) {
   if (!slug) return { articles: [], category: null }
 
-  // Get the category metadata
-  const categories = await fetchCategories()
-  const category = categories.find(cat => cat.slug === slug)
+  try {
+    // Get the category metadata
+    const categories = await fetchCategories()
+    const category = categories.find(cat => cat.slug === slug)
 
-  if (!category) return { articles: [], category: null }
+    if (!category) return { articles: [], category: null }
 
-  // Use category_slug query parameter for server-side filtering
-  const queryParams = new URLSearchParams({
-    category_slug: slug,
-    status: "published",
-    sort: "date",
-    order: "desc",
-  })
+    // Use category_slug query parameter for server-side filtering
+    const queryParams = new URLSearchParams({
+      category_slug: slug,
+      status: "published",
+      sort: "date",
+      order: "desc",
+    })
 
-  const data = await fetchAPI(`/api/v1/articles?${queryParams}`)
+    const data = await fetchAPI(`/api/v1/articles?${queryParams}`)
 
-  return {
-    articles: (data.articles || []).map(normalizeArticle),
-    category: { name: category.name, slug: category.slug },
+    return {
+      articles: (data.articles || []).map(normalizeArticle),
+      category: { name: category.name, slug: category.slug },
+    }
+  } catch (error) {
+    console.error("Error fetching articles by category:", error)
+    return { articles: [], category: null }
   }
 }
 
@@ -178,8 +198,13 @@ export async function fetchPaginated(page = 1, categorySlug = null) {
     queryParams.append("category_slug", categorySlug)
   }
 
-  const data = await fetchAPI(`/api/v1/articles?${queryParams}`)
-  return (data.articles || []).map(normalizeArticle)
+  try {
+    const data = await fetchAPI(`/api/v1/articles?${queryParams}`)
+    return (data.articles || []).map(normalizeArticle)
+  } catch (error) {
+    console.error("Error fetching paginated articles:", error)
+    return []
+  }
 }
 
 export async function fetchArticle(slug) {
@@ -238,8 +263,13 @@ export async function fetchArticleSlugs() {
 }
 
 export async function countArticles() {
-  const data = await fetchAPI("/api/v1/articles?status=published&limit=1")
-  return data.total || 0
+  try {
+    const data = await fetchAPI("/api/v1/articles?status=published&limit=1")
+    return data.total || 0
+  } catch (error) {
+    console.error("Error counting articles:", error)
+    return 0
+  }
 }
 
 export async function countArticlesByCategory(slug) {
@@ -249,8 +279,13 @@ export async function countArticlesByCategory(slug) {
     category_slug: slug,
     limit: "1",
   })
-  const data = await fetchAPI(`/api/v1/articles?${queryParams}`)
-  return data.total || 0
+  try {
+    const data = await fetchAPI(`/api/v1/articles?${queryParams}`)
+    return data.total || 0
+  } catch (error) {
+    console.error("Error counting articles by category:", error)
+    return 0
+  }
 }
 
 // Category Endpoints
