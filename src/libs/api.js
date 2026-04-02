@@ -61,6 +61,8 @@ export async function fetchAPI(path, options = {}) {
 function normalizeArticle(article) {
   return {
     ...article,
+    // Ensure `image_url` is JSON-serializable for Next.js getStaticProps
+    // If neither `image` nor `image_url` exist, set to null (not undefined)
     image_url: article.image || article.image_url || null,
     category:
       typeof article.category === "string"
@@ -237,6 +239,17 @@ export async function fetchArticleSlugs() {
 
 export async function countArticles() {
   const data = await fetchAPI("/api/v1/articles?status=published&limit=1")
+  return data.total || 0
+}
+
+export async function countArticlesByCategory(slug) {
+  if (!slug) return 0
+  const queryParams = new URLSearchParams({
+    status: "published",
+    category_slug: slug,
+    limit: "1",
+  })
+  const data = await fetchAPI(`/api/v1/articles?${queryParams}`)
   return data.total || 0
 }
 

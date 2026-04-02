@@ -1,7 +1,12 @@
 import Layout from "@/components/layout"
 import ArticleList from "@/components/article/ArticleList"
 import Meta from "@/components/meta"
-import { fetchByCategory, fetchCategorySlug, countArticles } from "@/libs/api"
+import {
+  fetchByCategory,
+  fetchCategorySlug,
+  countArticlesByCategory,
+  fetchPaginated,
+} from "@/libs/api"
 import { CATEGORY_ID_ROUTE } from "src/constanst/routes"
 import config from "@/contents/site-settings.json"
 
@@ -24,7 +29,7 @@ export default function ArticlesByCategory({ articles, category, pagination }) {
 
 export async function getStaticProps({ params }) {
   const postsPerPage = config.posts_per_page || 9
-  const { articles, category } = await fetchByCategory(params.slug)
+  const { category } = await fetchByCategory(params.slug)
 
   // If category doesn't exist, return 404
   if (!category) {
@@ -33,9 +38,10 @@ export async function getStaticProps({ params }) {
     }
   }
 
-  // Paginate articles for first page
-  const paginatedArticles = articles.slice(0, postsPerPage)
-  const totalArticles = articles.length
+  const [articles, totalArticles] = await Promise.all([
+    fetchPaginated(1, params.slug),
+    countArticlesByCategory(params.slug),
+  ])
 
   const pagination = {
     current: 1,
@@ -44,7 +50,7 @@ export async function getStaticProps({ params }) {
 
   return {
     props: {
-      articles: paginatedArticles || [],
+      articles: articles || [],
       category: {
         name: category.name || params.slug,
         slug: category.slug || params.slug,

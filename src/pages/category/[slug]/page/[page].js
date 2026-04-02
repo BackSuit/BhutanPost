@@ -1,7 +1,12 @@
 import Layout from "@/components/layout"
 import ArticleList from "@/components/article/ArticleList"
 import Meta from "@/components/meta"
-import { fetchByCategory, fetchCategorySlug } from "@/libs/api"
+import {
+  fetchByCategory,
+  fetchCategorySlug,
+  fetchPaginated,
+  countArticlesByCategory,
+} from "@/libs/api"
 import { CATEGORY_ID_ROUTE } from "src/constanst/routes"
 import config from "@/contents/site-settings.json"
 
@@ -26,7 +31,7 @@ export default function CategoryPage({ articles, category, pagination, page }) {
 export async function getStaticProps({ params }) {
   const page = parseInt(params.page)
   const postsPerPage = config.posts_per_page || 9
-  const { articles, category } = await fetchByCategory(params.slug)
+  const { category } = await fetchByCategory(params.slug)
 
   // If category doesn't exist, return 404
   if (!category) {
@@ -35,13 +40,10 @@ export async function getStaticProps({ params }) {
     }
   }
 
-  // Paginate articles
-  const paginatedArticles = articles.slice(
-    (page - 1) * postsPerPage,
-    page * postsPerPage
-  )
-
-  const totalArticles = articles.length
+  const [articles, totalArticles] = await Promise.all([
+    fetchPaginated(page, params.slug),
+    countArticlesByCategory(params.slug),
+  ])
 
   const pagination = {
     current: page,
@@ -50,7 +52,7 @@ export async function getStaticProps({ params }) {
 
   return {
     props: {
-      articles: paginatedArticles || [],
+      articles: articles || [],
       category: {
         name: category.name || params.slug,
         slug: category.slug || params.slug,
@@ -70,8 +72,7 @@ export async function getStaticPaths() {
 
     // For each category, create pagination paths
     for (const category of categories) {
-      const { articles } = await fetchByCategory(category.slug)
-      const totalArticles = articles.length
+      const totalArticles = await countArticlesByCategory(category.slug)
       const pages = Math.ceil(totalArticles / postsPerPage)
 
       // Generate paths for pages 2 onwards (page 1 is handled by [slug].js)

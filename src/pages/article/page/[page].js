@@ -1,7 +1,7 @@
 import Layout from "@/components/layout"
 import ArticleList from "@/components/article/ArticleList"
 import Meta from "@/components/meta"
-import { countArticles, fetchArticles } from "@/libs/api"
+import { countArticles, fetchPaginated } from "@/libs/api"
 import { ARTICLE_PAGE_ROUTE } from "src/constanst/routes"
 import config from "@/contents/site-settings.json"
 
@@ -23,11 +23,10 @@ export default function Page({ articles, pagination, page }) {
 export async function getStaticProps({ params }) {
   const page = parseInt(params.page)
   const postsPerPage = config.posts_per_page || 9
-  const articles = (await fetchArticles()).slice(
-    (params.page - 1) * postsPerPage,
-    params.page * postsPerPage
-  )
-  const count = await countArticles()
+  const [articles, count] = await Promise.all([
+    fetchPaginated(page),
+    countArticles(),
+  ])
   const pagination = {
     current: page,
     pages: Math.ceil(count / postsPerPage),
