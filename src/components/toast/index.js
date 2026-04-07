@@ -1,5 +1,5 @@
 import { Box, Flex, Heading, Icon, IconButton, Text } from "@chakra-ui/react"
-import { HiX as CloseIcon } from "react-icons/hi"
+import { HiX as CloseIcon } from "@/components/icons"
 
 export default function CustomToast({
   title,

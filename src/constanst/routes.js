@@ -1,6 +1,3 @@
-import { AiFillHome, AiOutlineHome } from "react-icons/ai"
-import { BiCategory } from "react-icons/bi"
-
 export const HOME_ROUTE = "/"
 export const ARTICLE_ROUTE = "/article"
 export const MAGAZINE_ROUTE = "/magazine"
@@ -21,8 +18,6 @@ export const getNavigationLinks = (categories = []) => {
     {
       name: "Home",
       to: HOME_ROUTE,
-      icon: AiOutlineHome,
-      activeIcon: AiFillHome,
     },
   ]
 
@@ -31,8 +26,6 @@ export const getNavigationLinks = (categories = []) => {
     links.push({
       name: category.name,
       to: CATEGORY_ID_ROUTE(category.slug),
-      icon: BiCategory,
-      activeIcon: BiCategory,
     })
   })
 
@@ -44,8 +37,6 @@ export const navigationLinks = [
   {
     name: "Home",
     to: HOME_ROUTE,
-    icon: AiOutlineHome,
-    activeIcon: AiFillHome,
   },
 ]
 

@@ -14,7 +14,7 @@ import {
   VStack,
 } from "@chakra-ui/react"
 import Link from "next/link"
-import { FiSearch } from "react-icons/fi"
+import { FiSearch } from "@/components/icons"
 import { fetchAuthorsSlug } from "@/libs/api"
 import { AUTHORS_ROUTE, AUTHOR_ID_ROUTE } from "src/constanst/routes"
 import config from "@/contents/site-settings.json"

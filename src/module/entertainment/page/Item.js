@@ -8,7 +8,7 @@ import {
   Tooltip,
   useBreakpointValue,
 } from "@chakra-ui/react"
-import { FiPlay } from "react-icons/fi"
+import { FiPlay } from "@/components/icons"
 import { useRouter } from "next/router"
 import { formatDate } from "@/libs/date"
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react"
 import { Box, Flex, HStack, Text } from "@chakra-ui/react"
-import { TriangleUpIcon, TriangleDownIcon, MinusIcon } from "@chakra-ui/icons"
+import { TriangleUpIcon, TriangleDownIcon, MinusIcon } from "@/components/icons"
 import { keyframes } from "@emotion/react"
 
 const tickerScroll = keyframes`

@@ -1,5 +1,5 @@
 import React from "react"
-import { InfoIcon } from "@chakra-ui/icons"
+import { InfoIcon } from "@/components/icons"
 import { Box, Flex, Heading } from "@chakra-ui/react"
 
 export default function UnderConstructionPage() {

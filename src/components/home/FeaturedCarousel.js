@@ -10,7 +10,7 @@ import {
   Badge,
   IconButton,
 } from "@chakra-ui/react"
-import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons"
+import { ChevronLeftIcon, ChevronRightIcon } from "@/components/icons"
 import { ARTICLE_ID_ROUTE } from "src/constanst/routes"
 import { formatDate } from "@/libs/date"
 
@@ -127,7 +127,7 @@ export default function FeaturedCarousel({ articles }) {
               borderRadius="full"
               bg={i === current ? "brand.primary" : "whiteAlpha.700"}
               cursor="pointer"
-              transition="all 0.3s ease"
+              transition="width 0.3s ease, background 0.3s ease"
               onClick={() => setCurrent(i)}
             />
           ))}
@@ -156,6 +156,7 @@ function CarouselSlide({ article, isActive }) {
         alt={title}
         fill
         style={{ objectFit: "cover" }}
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 1200px"
         quality={70}
       />
       <Box

@@ -21,10 +21,10 @@ import {
   Link,
 } from "@chakra-ui/react"
 
-import { HiOutlineMail, HiOutlineUser, HiX } from "react-icons/hi"
-import { FiLink } from "react-icons/fi"
-import { AiFillCheckCircle } from "react-icons/ai"
-import { MdCopyright, MdSubject } from "react-icons/md"
+import { HiOutlineMail, HiOutlineUser, HiX } from "@/components/icons"
+import { FiLink } from "@/components/icons"
+import { AiFillCheckCircle } from "@/components/icons"
+import { MdCopyright, MdSubject } from "@/components/icons"
 
 import { footerLinks, CATEGORY_ID_ROUTE } from "src/constanst/routes"
 import Logo from "./Logo"
@@ -386,7 +386,7 @@ export default function Footer() {
               fontSize={{ base: "xs", lg: "sm" }}
               ml={1}
             >
-              Bhutan Post {new Date().getFullYear()}. All rights reserved.
+              {siteName} {new Date().getFullYear()}. All rights reserved.
             </Text>
           </HStack>
           <HStack color="gray.400" spacing={{ base: 2, md: 3 }} fontSize="sm">

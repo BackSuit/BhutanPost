@@ -18,7 +18,7 @@ import {
   Box,
   Text,
 } from "@chakra-ui/react"
-import { AiOutlineInstagram } from "react-icons/ai"
+import { AiOutlineInstagram } from "@/components/icons"
 import NextLink from "next/link"
 import { useRouter } from "next/router"
 
@@ -188,27 +188,34 @@ export default function MobileNavbar({ isOpen, onClose }) {
               })()}
             </Box>
 
-            <UnorderedList
-              alignSelf="flex-end"
-              w="full"
-              px={6}
-              pb={2}
-              pt={3}
-              color="gray.500"
-              display="flex"
-              alignItems="center"
-              borderTop="1px solid"
-              borderTopColor="gray.100"
-              fontSize="sm"
-            >
-              <Icon marginRight={3} boxSize="1.2em" as={AiOutlineInstagram} />
-              <Link
-                href={`/redirect?url=https://instagram.com/${config.instagram_account}`}
-                _hover={{ color: "brand.primary" }}
-              >
-                @{config.instagram_account}
-              </Link>
-            </UnorderedList>
+            {config.instagram_account &&
+              config.instagram_account.trim() !== "" && (
+                <UnorderedList
+                  alignSelf="flex-end"
+                  w="full"
+                  px={6}
+                  pb={2}
+                  pt={3}
+                  color="gray.500"
+                  display="flex"
+                  alignItems="center"
+                  borderTop="1px solid"
+                  borderTopColor="gray.100"
+                  fontSize="sm"
+                >
+                  <Icon
+                    marginRight={3}
+                    boxSize="1.2em"
+                    as={AiOutlineInstagram}
+                  />
+                  <Link
+                    href={`/redirect?url=https://instagram.com/${config.instagram_account}`}
+                    _hover={{ color: "brand.primary" }}
+                  >
+                    @{config.instagram_account}
+                  </Link>
+                </UnorderedList>
+              )}
           </VStack>
         </DrawerBody>
       </DrawerContent>

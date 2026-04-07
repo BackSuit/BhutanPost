@@ -1,8 +1,10 @@
-export const GA_TRACKING_ID = "G-REQTCXEGDM"
+export const GA_TRACKING_ID = process.env.NEXT_PUBLIC_GA_TRACKING_ID || ""
+export const ADSENSE_PUBLISHER_ID = process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID || ""
+
 
 // https://developers.google.com/analytics/devguides/collection/gtagjs/pages
 export const pageview = url => {
-  if (typeof window !== "undefined") {
+  if (typeof window !== "undefined" && GA_TRACKING_ID) {
     window.gtag("config", GA_TRACKING_ID, {
       page_path: url,
     })

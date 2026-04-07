@@ -1,7 +1,7 @@
 import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/router"
 import { useMemo } from "react"
-import { FiLogOut, FiUser } from "react-icons/fi"
+import { FiLogOut, FiUser } from "@/components/icons"
 import {
   Icon,
   Menu,
@@ -13,8 +13,10 @@ import {
   MenuDivider,
   useDisclosure,
 } from "@chakra-ui/react"
-import ProfileForm from "./ProfileForm"
+import dynamic from "next/dynamic"
 import { getAPIURL } from "@/libs/api"
+
+const ProfileForm = dynamic(() => import("./ProfileForm"), { ssr: false })
 
 const AuthButton = () => {
   const { data: session, status } = useSession()

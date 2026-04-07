@@ -15,7 +15,7 @@ import {
   RiWhatsappFill,
   RiLineFill,
   RiFileCopy2Fill,
-} from "react-icons/ri"
+} from "@/components/icons"
 import {
   FacebookShareButton,
   TelegramShareButton,
@@ -23,7 +23,7 @@ import {
   WhatsappShareButton,
   LineShareButton,
 } from "react-share"
-import { AiFillCheckCircle } from "react-icons/ai"
+import { AiFillCheckCircle } from "@/components/icons"
 import CustomToast from "../toast"
 
 export default function ArticleShare({ url }) {

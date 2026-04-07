@@ -10,7 +10,7 @@ import {
   VStack,
   Badge,
 } from "@chakra-ui/react"
-import { ChevronRightIcon } from "@chakra-ui/icons"
+import { HiChevronRight as ChevronRightIcon } from "@/components/icons"
 import { ARTICLE_ID_ROUTE, CATEGORY_ID_ROUTE } from "src/constanst/routes"
 import { formatDate } from "@/libs/date"
 
@@ -27,7 +27,7 @@ function CompactCard({ article }) {
       overflow="hidden"
       border="1px solid"
       borderColor="gray.100"
-      transition="all 0.3s ease"
+      transition="transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease"
       _hover={{
         boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
         transform: "translateY(-2px)",
@@ -41,13 +41,14 @@ function CompactCard({ article }) {
             alt={title}
             fill
             style={{ objectFit: "cover" }}
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             quality={50}
           />
         )}
       </Box>
       <VStack align="flex-start" spacing={2} p={4}>
         <Heading
-          as="h4"
+          as="h3"
           fontSize={{ base: "md", md: "lg" }}
           fontFamily="heading"
           fontWeight="600"
@@ -64,7 +65,7 @@ function CompactCard({ article }) {
           </Text>
         )}
         {date && (
-          <Text fontSize="xs" color="gray.500">
+          <Text fontSize="xs" color="gray.600">
             {formatDate(new Date(date))}
           </Text>
         )}
@@ -110,6 +111,7 @@ export default function CategorySection({
             fontWeight="600"
             color="brand.primary"
             _hover={{ textDecoration: "underline" }}
+            aria-label={`View all articles in ${categoryName}`}
           >
             <Text>View All</Text>
             <ChevronRightIcon />

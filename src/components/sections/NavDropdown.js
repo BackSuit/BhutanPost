@@ -1,14 +1,5 @@
-import {
-  Box,
-  Flex,
-  Text,
-  Menu,
-  MenuButton,
-  MenuList,
-  MenuItem,
-  Icon,
-} from "@chakra-ui/react"
-import { HiChevronDown } from "react-icons/hi"
+import { Box, Flex, Text, Icon } from "@chakra-ui/react"
+import { HiChevronDown } from "@/components/icons"
 import Link from "next/link"
 import { useRouter } from "next/router"
 import { CATEGORY_ID_ROUTE } from "src/constanst/routes"
@@ -30,13 +21,13 @@ function getCategoryByLabel(label) {
       cat =>
         String(cat.name || "")
           .trim()
-          .toLowerCase() === key
+          .toLowerCase() === key,
     ) ||
     categories.find(
       cat =>
         String(cat.slug || "")
           .trim()
-          .toLowerCase() === key
+          .toLowerCase() === key,
     )
   )
 }
@@ -92,13 +83,15 @@ function NavDropdownGroup({ group }) {
   const isGroupActive = group.items.some(
     slug =>
       router.asPath === CATEGORY_ID_ROUTE(slug) ||
-      router.asPath.startsWith(CATEGORY_ID_ROUTE(slug) + "/")
+      router.asPath.startsWith(CATEGORY_ID_ROUTE(slug) + "/"),
   )
 
   return (
-    <Menu isLazy>
-      <MenuButton
-        as={Box}
+    <Box role="group" position="relative">
+      <Box
+        as="button"
+        type="button"
+        aria-haspopup="menu"
         cursor="pointer"
         px={3}
         py={2}
@@ -110,11 +103,16 @@ function NavDropdownGroup({ group }) {
         display="flex"
         alignItems="center"
         gap={1}
+        bg="transparent"
+        border="none"
       >
         <Text as="span">{group.label}</Text>
         <Icon as={HiChevronDown} boxSize="0.9em" />
-      </MenuButton>
-      <MenuList
+      </Box>
+      <Box
+        position="absolute"
+        top="100%"
+        left={0}
         bg="white"
         border="1px solid"
         borderColor="gray.100"
@@ -123,6 +121,22 @@ function NavDropdownGroup({ group }) {
         py={2}
         minW="200px"
         zIndex={20}
+        opacity={0}
+        visibility="hidden"
+        transform="translateY(-4px)"
+        transition="opacity 0.15s, visibility 0.15s, transform 0.15s"
+        _groupHover={{
+          opacity: 1,
+          visibility: "visible",
+          transform: "translateY(0)",
+        }}
+        sx={{
+          "&:focus-within": {
+            opacity: 1,
+            visibility: "visible",
+            transform: "translateY(0)",
+          },
+        }}
       >
         {group.items.map(slug => {
           const category = getCategoryBySlug(slug)
@@ -131,25 +145,25 @@ function NavDropdownGroup({ group }) {
           const isActive = router.asPath === CATEGORY_ID_ROUTE(slug)
 
           return (
-            <MenuItem
+            <Box
               key={slug}
               as={Link}
               href={CATEGORY_ID_ROUTE(slug)}
+              display="block"
               fontSize="sm"
               fontWeight={isActive ? 600 : 400}
               color={isActive ? "brand.primary" : "gray.700"}
-              bg="transparent"
               _hover={{ bg: "gray.50", color: "brand.primary" }}
               _focus={{ bg: "gray.50" }}
               px={4}
               py={2}
             >
               {category.name}
-            </MenuItem>
+            </Box>
           )
         })}
-      </MenuList>
-    </Menu>
+      </Box>
+    </Box>
   )
 }
 

@@ -7,18 +7,23 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
-  Button,
   HStack,
-  Text,
+  Text
 } from "@chakra-ui/react"
-import { HiX as CloseIcon, HiMenu as MenuIcon, HiSearch } from "react-icons/hi"
+import {
+  HiX as CloseIcon,
+  HiMenu as MenuIcon,
+  HiSearch,
+} from "@/components/icons"
 import { useRouter } from "next/router"
 import { useState } from "react"
+import dynamic from "next/dynamic"
 import Logo from "./Logo"
-import MobileNavbar from "./MobileNavbar"
 import NavDropdown from "./NavDropdown"
-import AuthButton from "../auth/AuthButton"
 import StockTicker from "./StockTicker"
+
+const MobileNavbar = dynamic(() => import("./MobileNavbar"), { ssr: false })
+const AuthButton = dynamic(() => import("../auth/AuthButton"), { ssr: false })
 
 function SearchBar() {
   const router = useRouter()
@@ -40,7 +45,7 @@ function SearchBar() {
     >
       <InputGroup size="sm" w="220px">
         <InputLeftElement pointerEvents="none">
-          <Icon as={HiSearch} color="gray.400" />
+          <Icon as={HiSearch} color="gray.500" />
         </InputLeftElement>
         <Input
           placeholder="Search news..."
@@ -135,6 +140,7 @@ export default function Header() {
         className="header"
         borderBottom="3px solid"
         borderBottomColor="brand.primary"
+        boxShadow="0 2px 12px rgba(0,0,0,0.06)"
         sx={{
           "@supports (backdrop-filter: saturate(180%) blur(20px))": {
             backdropFilter: "saturate(180%) blur(20px)",

@@ -7,8 +7,12 @@ import {
   StackDivider,
   Text,
 } from "@chakra-ui/react"
-import { HiOutlineSwitchVertical } from "react-icons/hi"
-import { SiApplepodcasts, SiGooglepodcasts, SiSpotify } from "react-icons/si"
+import { HiOutlineSwitchVertical } from "@/components/icons"
+import {
+  SiApplepodcasts,
+  SiGooglepodcasts,
+  SiSpotify,
+} from "@/components/icons"
 
 import IGTag from "../shared/IGTag"
 import PodcastButton from "../shared/podcast-link"

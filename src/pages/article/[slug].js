@@ -20,7 +20,7 @@ const RelatedArticles = dynamic(() =>
 
 // Library Components
 import { Avatar, Icon, Stack, Text } from "@chakra-ui/react"
-import { FiUser } from "react-icons/fi"
+import { FiUser } from "@/components/icons"
 
 // Libs
 import ArticleMeta from "@/components/meta/ArticleMeta"

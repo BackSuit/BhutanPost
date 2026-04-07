@@ -1,5 +1,5 @@
 import Image from "next/image"
-import { ChevronRightIcon } from "@chakra-ui/icons"
+import { HiChevronRight as ChevronRightIcon } from "@/components/icons"
 import {
   Box,
   Flex,
@@ -22,7 +22,7 @@ const ArticleLink = ({ children, href, ...restProps }) => (
     href={href}
     fontWeight="normal"
     fontSize={{ base: "xs", lg: "sm" }}
-    color="gray.500"
+    color="gray.600"
     margin="0"
     textTransform="uppercase"
     letterSpacing="0.05em"
@@ -50,7 +50,7 @@ const Article = ({ article }) => {
           overflow="hidden"
           border="1px solid"
           borderColor="gray.100"
-          transition="all 0.3s ease"
+          transition="transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease"
           _hover={{
             boxShadow: "0 8px 30px rgba(0,0,0,0.1)",
             transform: "translateY(-2px)",
@@ -80,6 +80,7 @@ const Article = ({ article }) => {
                   }}
                   src={image_url}
                   alt={title}
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 500px"
                   quality={50}
                   onLoad={setIsLoaded}
                 />
@@ -160,6 +161,7 @@ const Article = ({ article }) => {
               fontSize={{ base: "0.8rem", lg: "0.9rem" }}
               fontWeight="600"
               transitionDuration={"150ms"}
+              aria-label={`Read more about ${title}`}
               _hover={{
                 color: "brand.secondary",
               }}

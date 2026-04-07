@@ -7,7 +7,6 @@ import {
   Text,
   VStack,
   HStack,
-  Skeleton,
   Badge,
 } from "@chakra-ui/react"
 import { ARTICLE_ID_ROUTE, CATEGORY_ID_ROUTE } from "src/constanst/routes"
@@ -29,7 +28,7 @@ function MainStory({ article }) {
       overflow="hidden"
       height={{ base: "350px", md: "480px", lg: "520px" }}
       _hover={{ "& .hero-overlay": { bg: "rgba(0,0,0,0.65)" } }}
-      transition="all 0.3s ease"
+      transition="transform 0.3s ease, box-shadow 0.3s ease"
     >
       <Image
         src={image_url}
@@ -37,6 +36,7 @@ function MainStory({ article }) {
         fill
         style={{ objectFit: "cover" }}
         quality={80}
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 66vw, 800px"
         priority
       />
       <Box
@@ -113,7 +113,7 @@ function LatestNewsSidebar({ articles }) {
     >
       <Box bg="brand.secondary" px={4} py={3}>
         <Heading
-          as="h3"
+          as="h2"
           fontSize="sm"
           fontWeight="700"
           color="white"
@@ -172,6 +172,7 @@ function SidebarItem({ article, index }) {
             alt={title}
             fill
             style={{ objectFit: "cover" }}
+            sizes="70px"
             quality={40}
           />
         </Box>
@@ -189,7 +190,7 @@ function SidebarItem({ article, index }) {
           </Text>
         )}
         <Heading
-          as="h4"
+          as="h3"
           fontSize="sm"
           fontWeight="600"
           lineHeight="1.3"
@@ -199,7 +200,7 @@ function SidebarItem({ article, index }) {
           {title}
         </Heading>
         {date && (
-          <Text fontSize="2xs" color="gray.500">
+          <Text fontSize="2xs" color="gray.600">
             {formatDate(new Date(date))}
           </Text>
         )}

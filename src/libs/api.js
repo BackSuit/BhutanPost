@@ -28,32 +28,54 @@ export function getHeaders(includeAuth = false, token = null) {
   return headers
 }
 
-// Generic fetch function
+// Generic fetch function with retry logic for build-time resilience
 export async function fetchAPI(path, options = {}) {
-  try {
-    const requestUrl = getAPIURL(path)
-    const headers = options.headers || getHeaders()
+  const maxRetries = 3
+  const baseDelay = 400 // ms — will back off to 400, 800, 1600ms
 
-    const response = await fetch(requestUrl, {
-      ...options,
-      headers: {
-        ...headers,
-        ...options.headers,
-      },
-    })
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const requestUrl = getAPIURL(path)
+      const headers = options.headers || getHeaders()
 
-    if (!response.ok) {
-      const error = await response
-        .json()
-        .catch(() => ({ error: "Request failed" }))
-      throw new Error(error.error || `HTTP ${response.status}`)
+      const response = await fetch(requestUrl, {
+        ...options,
+        headers: {
+          ...headers,
+          ...options.headers,
+        },
+      })
+
+      if (!response.ok) {
+        const statusCode = response.status
+        const errorBody = await response
+          .json()
+          .catch(() => ({ error: `HTTP ${statusCode}` }))
+        const err = new Error(errorBody.error || `HTTP ${statusCode}`)
+        err.status = statusCode
+        throw err
+      }
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      const isLastAttempt = attempt === maxRetries
+      // Only retry on server/network errors (5xx, network failures), not client errors (4xx)
+      const isRetryable = !error.status || error.status >= 500
+
+      if (isLastAttempt || !isRetryable) {
+        console.error("API Error:", error.message)
+        throw error
+      }
+
+      const delay = baseDelay * Math.pow(2, attempt)
+      console.warn(
+        `API retry ${attempt + 1}/${maxRetries} for ${path} in ${delay}ms (${
+          error.message
+        })`
+      )
+      await new Promise(resolve => setTimeout(resolve, delay))
     }
-
-    const data = await response.json()
-    return data
-  } catch (error) {
-    console.error("API Error:", error.message)
-    throw error
   }
 }
 
@@ -211,11 +233,24 @@ export async function fetchArticle(slug) {
   if (!slug) return null
 
   try {
-    // First, try to get all articles and filter by slug
-    // This is more reliable than search for exact slug matching
+    // Try the search endpoint first — fetches ~50 records instead of 1000
+    const searchData = await fetchAPI(
+      `/api/v1/articles/search?q=${encodeURIComponent(
+        slug
+      )}&limit=50&status=published`
+    ).catch(() => ({ results: [] }))
+
+    const searchArticle = searchData.results?.find(a => a.slug === slug)
+
+    if (searchArticle) {
+      const fullArticle = await fetchAPI(`/api/v1/articles/${searchArticle.id}`)
+      return normalizeArticle(fullArticle.article)
+    }
+
+    // Fall back to listing articles — slug may not match search keywords
     const queryParams = new URLSearchParams({
       status: "published",
-      limit: "1000", // Get a large number to ensure we find it
+      limit: "1000",
       sort: "date",
       order: "desc",
     })
@@ -224,19 +259,7 @@ export async function fetchArticle(slug) {
     const article = data.articles?.find(a => a.slug === slug)
 
     if (article) {
-      // Get full article details with content
       const fullArticle = await fetchAPI(`/api/v1/articles/${article.id}`)
-      return normalizeArticle(fullArticle.article)
-    }
-
-    // If not found in the main list, try search as fallback
-    const searchData = await fetchAPI(
-      `/api/v1/articles/search?q=${encodeURIComponent(slug)}&limit=50`
-    )
-    const searchArticle = searchData.results?.find(a => a.slug === slug)
-
-    if (searchArticle) {
-      const fullArticle = await fetchAPI(`/api/v1/articles/${searchArticle.id}`)
       return normalizeArticle(fullArticle.article)
     }
 
@@ -249,8 +272,10 @@ export async function fetchArticle(slug) {
 
 export async function fetchArticleSlugs() {
   try {
+    // Limit to 50 most recent at build time — the rest are generated on-demand
+    // via fallback: 'blocking' in getStaticPaths, then cached by ISR
     const data = await fetchAPI(
-      "/api/v1/articles?status=published&limit=1000&sort=title&order=asc"
+      "/api/v1/articles?status=published&limit=50&sort=date&order=desc"
     )
     return (data.articles || []).map(article => ({
       title: article.title,

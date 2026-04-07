@@ -12,7 +12,7 @@ import {
 } from "@chakra-ui/react"
 
 import PodcastButton from "../shared/podcast-link"
-import { SiSpotify } from "react-icons/si"
+import { SiSpotify } from "@/components/icons"
 
 export default function Mood({ width, titleSize }) {
   const images = [

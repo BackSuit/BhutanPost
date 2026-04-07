@@ -1,6 +1,6 @@
 import React from "react"
 import { useBreakpointValue, VStack } from "@chakra-ui/react"
-import { ArrowForwardIcon } from "@chakra-ui/icons"
+import { ArrowForwardIcon } from "@/components/icons"
 
 import HeroTitle from "./HeroTitle"
 import HeroImage from "./HeroImage"

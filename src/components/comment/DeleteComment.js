@@ -12,7 +12,7 @@ import {
   HiOutlineTrash,
   HiPencil,
   HiReply,
-} from "react-icons/hi"
+} from "@/components/icons"
 
 export default function CommentActions({
   deleteComment,
