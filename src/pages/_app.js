@@ -14,7 +14,6 @@ import * as gtag from "src/libs/gtag"
 import Container from "@/components/layout/container"
 import ContextProvider from "src/context"
 import { isProduction } from "src/constanst/development"
-import Script from "next/script"
 import dynamic from "next/dynamic"
 
 const Analytics = dynamic(
@@ -71,30 +70,6 @@ function MyApp({ Component, pageProps: { session, ...pageProps } }) {
           </ContextProvider>
         </ChakraProvider>
       </SessionProvider>
-
-      {/* Third-party scripts — only loaded in production and only if env vars are set */}
-      {isProduction && gtag.GA_TRACKING_ID && (
-        <>
-          <Script
-            src={`https://www.googletagmanager.com/gtag/js?id=${gtag.GA_TRACKING_ID}`}
-            strategy="afterInteractive"
-          />
-          <Script
-            id="gtag-init"
-            strategy="afterInteractive"
-            dangerouslySetInnerHTML={{
-              __html: `
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${gtag.GA_TRACKING_ID}', {
-                  page_path: window.location.pathname,
-                });
-              `,
-            }}
-          />
-        </>
-      )}
 
       <Analytics debug={false} />
       <SpeedInsights debug={false} />
