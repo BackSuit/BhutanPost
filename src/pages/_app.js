@@ -95,12 +95,6 @@ function MyApp({ Component, pageProps: { session, ...pageProps } }) {
           />
         </>
       )}
-      {isProduction && gtag.ADSENSE_PUBLISHER_ID && (
-        <Script async
-          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${gtag.ADSENSE_PUBLISHER_ID}`}
-          crossOrigin="anonymous"
-        />
-      )}
 
       <Analytics debug={false} />
       <SpeedInsights debug={false} />
