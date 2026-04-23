@@ -96,9 +96,8 @@ function MyApp({ Component, pageProps: { session, ...pageProps } }) {
         </>
       )}
       {isProduction && gtag.ADSENSE_PUBLISHER_ID && (
-        <Script
+        <Script async
           src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${gtag.ADSENSE_PUBLISHER_ID}`}
-          strategy="lazyOnload"
           crossOrigin="anonymous"
         />
       )}
