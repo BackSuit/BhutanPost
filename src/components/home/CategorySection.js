@@ -1,5 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
+import { getPlaceholderImage } from "@/utils/placeholder"
 import {
   Box,
   Flex,
@@ -16,6 +17,7 @@ import { formatDate } from "@/libs/date"
 
 function CompactCard({ article }) {
   const { title, slug, image_url, category, date, excerpt } = article
+  const displayImage = image_url || getPlaceholderImage(category?.slug, slug)
 
   return (
     <Box
@@ -35,16 +37,14 @@ function CompactCard({ article }) {
       }}
     >
       <Box position="relative" height={{ base: "180px", md: "200px" }}>
-        {image_url && (
-          <Image
-            src={image_url}
-            alt={title}
-            fill
-            style={{ objectFit: "cover" }}
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            quality={50}
-          />
-        )}
+        <Image
+          src={displayImage}
+          alt={title}
+          fill
+          style={{ objectFit: "cover" }}
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+          quality={50}
+        />
       </Box>
       <VStack align="flex-start" spacing={2} p={4}>
         <Heading

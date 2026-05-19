@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+
+  <defs>
+    <linearGradient id="gsports3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#150A2E"/>
+      <stop offset="55%"  stop-color="#6B2060"/>
+      <stop offset="100%" stop-color="#E84020"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#gsports3)"/>
+
+  <ellipse cx="160" cy="95"  rx="80" ry="22" fill="white" opacity="0.1"/>
+  <ellipse cx="200" cy="85"  rx="55" ry="18" fill="white" opacity="0.1"/>
+  <ellipse cx="580" cy="110" rx="90" ry="24" fill="white" opacity="0.1"/>
+  <ellipse cx="630" cy="100" rx="60" ry="18" fill="white" opacity="0.1"/>
+
+  <!-- Far snow-capped peaks -->
+  <polygon points="0,330 70,210 130,260 200,180 270,230 350,160 430,200 510,155 590,195 670,175 740,210 800,190 800,380 0,380"
+           fill="#5A2060" opacity="0.75"/>
+  <!-- Snow caps -->
+  <polygon points="200,180 215,215 185,215" fill="white" opacity="0.55"/>
+  <polygon points="350,160 368,200 332,200" fill="white" opacity="0.6"/>
+  <polygon points="510,155 528,193 492,193" fill="white" opacity="0.6"/>
+  <polygon points="670,175 685,210 655,210" fill="white" opacity="0.5"/>
+  <!-- Mid range -->
+  <polygon points="0,390 60,320 130,360 210,295 290,340 380,280 460,325 550,268 640,308 720,282 800,315 800,500 0,500"
+           fill="#2A1040"/>
+  <!-- Foreground hills -->
+  <polygon points="0,455 140,415 300,445 460,408 620,438 780,412 800,420 800,500 0,500"
+           fill="#120820"/>
+
+  <!-- Bow -->
+  <path d="M 300,155 Q 255,230 300,305"
+        fill="none" stroke="#D35400" stroke-width="8" stroke-linecap="round"/>
+  <!-- Bowstring -->
+  <line x1="300" y1="155" x2="300" y2="305"
+        stroke="#FAD7A0" stroke-width="2" opacity="0.85"/>
+  <!-- Arrow shaft -->
+  <line x1="312" y1="230" x2="410" y2="230"
+        stroke="#D35400" stroke-width="4" stroke-linecap="round"/>
+  <!-- Arrowhead -->
+  <polygon points="410,230 396,223 396,237" fill="#FAD7A0"/>
+  <!-- Fletching (back of arrow) -->
+  <polygon points="312,230 324,220 326,230"
+           fill="#FAD7A0" opacity="0.85"/>
+  <polygon points="312,230 324,240 326,230"
+           fill="#FAD7A0" opacity="0.85"/>
+  <!-- Target board -->
+  <rect x="430" y="175" width="12" height="110" fill="#D35400" opacity="0.4" rx="2"/>
+  <!-- Target rings -->
+  <circle cx="436" cy="230" r="42" fill="white"   opacity="0.15"/>
+  <circle cx="436" cy="230" r="42" fill="none" stroke="#D35400" stroke-width="3.5"/>
+  <circle cx="436" cy="230" r="30" fill="none" stroke="#FAD7A0" stroke-width="3"/>
+  <circle cx="436" cy="230" r="18" fill="none" stroke="#D35400" stroke-width="2.5"/>
+  <circle cx="436" cy="230" r="8"  fill="#FAD7A0" opacity="0.8"/>
+  <!-- Ground line -->
+  <line x1="250" y1="320" x2="460" y2="320"
+        stroke="#D35400" stroke-width="2" opacity="0.25"/>
+
+
+  <rect x="0" y="0" width="800" height="500" fill="none"
+        stroke="rgba(255,255,255,0.18)" stroke-width="10"/>
+</svg>

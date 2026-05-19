@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+
+  <defs>
+    <linearGradient id="geconomy2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#1565C0"/>
+      <stop offset="55%"  stop-color="#4A90D9"/>
+      <stop offset="100%" stop-color="#B8D9F0"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#geconomy2)"/>
+
+  <ellipse cx="160" cy="95"  rx="80" ry="22" fill="white" opacity="0.14"/>
+  <ellipse cx="200" cy="85"  rx="55" ry="18" fill="white" opacity="0.14"/>
+  <ellipse cx="580" cy="110" rx="90" ry="24" fill="white" opacity="0.14"/>
+  <ellipse cx="630" cy="100" rx="60" ry="18" fill="white" opacity="0.14"/>
+
+  <!-- Far snow-capped peaks -->
+  <polygon points="0,330 70,210 130,260 200,180 270,230 350,160 430,200 510,155 590,195 670,175 740,210 800,190 800,380 0,380"
+           fill="#8DAFC8" opacity="0.75"/>
+  <!-- Snow caps -->
+  <polygon points="200,180 215,215 185,215" fill="white" opacity="0.55"/>
+  <polygon points="350,160 368,200 332,200" fill="white" opacity="0.6"/>
+  <polygon points="510,155 528,193 492,193" fill="white" opacity="0.6"/>
+  <polygon points="670,175 685,210 655,210" fill="white" opacity="0.5"/>
+  <!-- Mid range -->
+  <polygon points="0,390 60,320 130,360 210,295 290,340 380,280 460,325 550,268 640,308 720,282 800,315 800,500 0,500"
+           fill="#3A7A3A"/>
+  <!-- Foreground hills -->
+  <polygon points="0,455 140,415 300,445 460,408 620,438 780,412 800,420 800,500 0,500"
+           fill="#2A5A2A"/>
+
+  <!-- Reservoir -->
+  <ellipse cx="400" cy="250" rx="105" ry="25" fill="#A2D9CE" opacity="0.6"/>
+  <!-- Water shimmer -->
+  <path d="M 320,247 Q 360,237 400,247
+             Q 440,257 480,247"
+        fill="none" stroke="white" stroke-width="1.5" opacity="0.35"/>
+  <!-- Dam wall -->
+  <path d="M 320,275 L 340,350
+             L 460,350 L 480,275 Z"
+        fill="#1E8449"/>
+  <!-- Dam face texture -->
+  <line x1="340" y1="350" x2="322" y2="277"
+        stroke="#A2D9CE" stroke-width="1.5" opacity="0.25"/>
+  <line x1="380" y1="350" x2="374" y2="276"
+        stroke="#A2D9CE" stroke-width="1.5" opacity="0.25"/>
+  <line x1="420" y1="350" x2="426" y2="276"
+        stroke="#A2D9CE" stroke-width="1.5" opacity="0.25"/>
+  <line x1="460" y1="350" x2="478" y2="277"
+        stroke="#A2D9CE" stroke-width="1.5" opacity="0.25"/>
+  <!-- Sluice gates -->
+  <rect x="382" y="305" width="14" height="38" fill="#A2D9CE" opacity="0.55" rx="1"/>
+  <rect x="404"  y="305" width="14" height="38" fill="#A2D9CE" opacity="0.55" rx="1"/>
+  <!-- Water outflow -->
+  <path d="M 350,350 Q 400,370 450,350"
+        fill="none" stroke="#A2D9CE" stroke-width="5" stroke-linecap="round" opacity="0.8"/>
+  <path d="M 365,357 Q 400,377 435,357"
+        fill="none" stroke="#A2D9CE" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+  <!-- Power transmission lines -->
+  <line x1="360" y1="275" x2="290" y2="230"
+        stroke="#A2D9CE" stroke-width="1.5" opacity="0.45"/>
+  <line x1="440" y1="275" x2="510" y2="230"
+        stroke="#A2D9CE" stroke-width="1.5" opacity="0.45"/>
+  <circle cx="290" cy="230" r="5" fill="#A2D9CE" opacity="0.5"/>
+  <circle cx="510" cy="230" r="5" fill="#A2D9CE" opacity="0.5"/>
+
+
+  <rect x="0" y="0" width="800" height="500" fill="none"
+        stroke="rgba(255,255,255,0.18)" stroke-width="10"/>
+</svg>

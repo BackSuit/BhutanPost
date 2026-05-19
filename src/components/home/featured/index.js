@@ -1,4 +1,5 @@
 import Image from "next/image"
+import { getPlaceholderImage } from "@/utils/placeholder"
 import { Box, Flex, VStack } from "@chakra-ui/layout"
 import { useBreakpointValue } from "@chakra-ui/media-query"
 import { Skeleton } from "@chakra-ui/skeleton"
@@ -50,7 +51,7 @@ export default function FeaturedArticle({ article, reverse, btnColor }) {
               <Skeleton height="100%" width="100%" isLoaded={inView}>
                 {inView && (
                   <Image
-                    src={article?.image_url}
+                    src={article?.image_url || getPlaceholderImage(article?.category?.slug, article?.slug)}
                     alt={article?.title}
                     width={360}
                     height={360}

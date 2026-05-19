@@ -1,5 +1,6 @@
 import Image from "next/image"
 import { HiChevronRight as ChevronRightIcon } from "@/components/icons"
+import { getPlaceholderImage } from "@/utils/placeholder"
 import {
   Box,
   Flex,
@@ -35,6 +36,7 @@ const ArticleLink = ({ children, href, ...restProps }) => (
 
 const Article = ({ article }) => {
   const { title, slug, excerpt, image_url, authors, category } = article
+  const displayImage = image_url || getPlaceholderImage(category?.slug, slug)
   const excerptSplit = excerpt?.split(" ")
   return (
     <RenderInView>
@@ -68,7 +70,7 @@ const Article = ({ article }) => {
             overflow="hidden"
           >
             <Skeleton height="100%" width="100%" isLoaded={inView}>
-              {inView && image_url && (
+              {inView && (
                 <Image
                   width={500}
                   height={500}
@@ -78,7 +80,7 @@ const Article = ({ article }) => {
                     height: "auto",
                     maxHeight: "280px",
                   }}
-                  src={image_url}
+                  src={displayImage}
                   alt={title}
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 500px"
                   quality={50}

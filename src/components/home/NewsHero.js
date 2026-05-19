@@ -1,5 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
+import { getPlaceholderImage } from "@/utils/placeholder"
 import {
   Box,
   Flex,
@@ -17,6 +18,7 @@ function MainStory({ article }) {
   if (!article) return null
 
   const { title, slug, excerpt, image_url, category, date, authors } = article
+  const displayImage = image_url || getPlaceholderImage(category?.slug, slug)
 
   return (
     <Box
@@ -31,7 +33,7 @@ function MainStory({ article }) {
       transition="transform 0.3s ease, box-shadow 0.3s ease"
     >
       <Image
-        src={image_url}
+        src={displayImage}
         alt={title}
         fill
         style={{ objectFit: "cover" }}
@@ -146,6 +148,7 @@ function LatestNewsSidebar({ articles }) {
 
 function SidebarItem({ article, index }) {
   const { title, slug, category, date, image_url } = article
+  const displayImage = image_url || getPlaceholderImage(category?.slug, slug)
 
   return (
     <HStack
@@ -158,25 +161,23 @@ function SidebarItem({ article, index }) {
       transition="background 0.2s"
       align="flex-start"
     >
-      {image_url && (
-        <Box
-          flexShrink={0}
-          w="70px"
-          h="55px"
-          borderRadius="md"
-          overflow="hidden"
-          position="relative"
-        >
-          <Image
-            src={image_url}
-            alt={title}
-            fill
-            style={{ objectFit: "cover" }}
-            sizes="70px"
-            quality={40}
-          />
-        </Box>
-      )}
+      <Box
+        flexShrink={0}
+        w="70px"
+        h="55px"
+        borderRadius="md"
+        overflow="hidden"
+        position="relative"
+      >
+        <Image
+          src={displayImage}
+          alt={title}
+          fill
+          style={{ objectFit: "cover" }}
+          sizes="70px"
+          quality={40}
+        />
+      </Box>
       <VStack align="flex-start" spacing={1} flex={1} minW={0}>
         {category && (
           <Text

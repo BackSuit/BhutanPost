@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+
+  <defs>
+    <linearGradient id="gopinion2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#1565C0"/>
+      <stop offset="55%"  stop-color="#4A90D9"/>
+      <stop offset="100%" stop-color="#B8D9F0"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#gopinion2)"/>
+
+  <ellipse cx="160" cy="95"  rx="80" ry="22" fill="white" opacity="0.14"/>
+  <ellipse cx="200" cy="85"  rx="55" ry="18" fill="white" opacity="0.14"/>
+  <ellipse cx="580" cy="110" rx="90" ry="24" fill="white" opacity="0.14"/>
+  <ellipse cx="630" cy="100" rx="60" ry="18" fill="white" opacity="0.14"/>
+
+  <!-- Far snow-capped peaks -->
+  <polygon points="0,330 70,210 130,260 200,180 270,230 350,160 430,200 510,155 590,195 670,175 740,210 800,190 800,380 0,380"
+           fill="#8DAFC8" opacity="0.75"/>
+  <!-- Snow caps -->
+  <polygon points="200,180 215,215 185,215" fill="white" opacity="0.55"/>
+  <polygon points="350,160 368,200 332,200" fill="white" opacity="0.6"/>
+  <polygon points="510,155 528,193 492,193" fill="white" opacity="0.6"/>
+  <polygon points="670,175 685,210 655,210" fill="white" opacity="0.5"/>
+  <!-- Mid range -->
+  <polygon points="0,390 60,320 130,360 210,295 290,340 380,280 460,325 550,268 640,308 720,282 800,315 800,500 0,500"
+           fill="#3A7A3A"/>
+  <!-- Foreground hills -->
+  <polygon points="0,455 140,415 300,445 460,408 620,438 780,412 800,420 800,500 0,500"
+           fill="#2A5A2A"/>
+
+  <!-- Chorten base -->
+  <rect x="370" y="310" width="60" height="14" fill="#B7950B" rx="2"/>
+  <!-- Chorten steps -->
+  <rect x="378" y="296" width="44" height="16" fill="#FDEBD0" rx="2"/>
+  <rect x="384" y="282"  width="32" height="16" fill="#B7950B" rx="2"/>
+  <!-- Dome -->
+  <ellipse cx="400" cy="268" rx="22" ry="18" fill="#FDEBD0"/>
+  <!-- Harmika (square above dome) -->
+  <rect x="392" y="250" width="16" height="10" fill="#B7950B" rx="1"/>
+  <!-- Spire -->
+  <rect x="397" y="208" width="6"  height="44" fill="#FDEBD0" rx="1"/>
+  <!-- Spire rings -->
+  <ellipse cx="400" cy="225" rx="10" ry="3.5" fill="#B7950B" opacity="0.7"/>
+  <ellipse cx="400" cy="232" rx="8"  ry="3"   fill="#B7950B" opacity="0.7"/>
+  <ellipse cx="400" cy="238" rx="6"  ry="2.5" fill="#B7950B" opacity="0.7"/>
+  <!-- Top jewel -->
+  <circle cx="400" cy="204" r="5" fill="#FDEBD0"/>
+  <!-- Dharma wheel on dome face -->
+  
+  <circle cx="400" cy="268" r="24" fill="#FDEBD0" opacity="0.08"/>
+  <circle cx="400" cy="268" r="14"       fill="none" stroke="#B7950B" stroke-width="7"/>
+  <circle cx="400" cy="268" r="3.5" fill="#FDEBD0" opacity="0.7"/>
+  <circle cx="400" cy="268" r="1.68" fill="#B7950B"/><line x1="400.0" y1="264.1" x2="400.0" y2="255.7"
+         stroke="#B7950B" stroke-width="5" stroke-linecap="round"/><line x1="402.8" y1="265.2" x2="408.7" y2="259.3"
+         stroke="#B7950B" stroke-width="5" stroke-linecap="round"/><line x1="403.9" y1="268.0" x2="412.3" y2="268.0"
+         stroke="#B7950B" stroke-width="5" stroke-linecap="round"/><line x1="402.8" y1="270.8" x2="408.7" y2="276.7"
+         stroke="#B7950B" stroke-width="5" stroke-linecap="round"/><line x1="400.0" y1="271.9" x2="400.0" y2="280.3"
+         stroke="#B7950B" stroke-width="5" stroke-linecap="round"/><line x1="397.2" y1="270.8" x2="391.3" y2="276.7"
+         stroke="#B7950B" stroke-width="5" stroke-linecap="round"/><line x1="396.1" y1="268.0" x2="387.7" y2="268.0"
+         stroke="#B7950B" stroke-width="5" stroke-linecap="round"/><line x1="397.2" y1="265.2" x2="391.3" y2="259.3"
+         stroke="#B7950B" stroke-width="5" stroke-linecap="round"/><circle cx="400" cy="268" r="20" fill="none"
+       stroke="#FDEBD0" stroke-width="2" opacity="0.5" stroke-dasharray="6,4"/>
+  <!-- Prayer flags from spire -->
+  <line x1="400" y1="204" x2="480" y2="250"
+       stroke="#8B6914" stroke-width="1.5" opacity="0.7"/><rect x="391.0" y="204.0"
+         width="18" height="24" fill="#1565C0" opacity="0.88" rx="1"/><rect x="407.0" y="213.2"
+         width="18" height="24" fill="#FFFFFF" opacity="0.88" rx="1"/><rect x="423.0" y="222.4"
+         width="18" height="24" fill="#C0392B" opacity="0.88" rx="1"/><rect x="439.0" y="231.6"
+         width="18" height="24" fill="#2E7D32" opacity="0.88" rx="1"/><rect x="455.0" y="240.8"
+         width="18" height="24" fill="#F4D03F" opacity="0.88" rx="1"/><rect x="471.0" y="250.0"
+         width="18" height="24" fill="#1565C0" opacity="0.88" rx="1"/>
+  <line x1="400" y1="204" x2="320" y2="250"
+       stroke="#8B6914" stroke-width="1.5" opacity="0.7"/><rect x="391.0" y="204.0"
+         width="18" height="24" fill="#1565C0" opacity="0.88" rx="1"/><rect x="375.0" y="213.2"
+         width="18" height="24" fill="#FFFFFF" opacity="0.88" rx="1"/><rect x="359.0" y="222.4"
+         width="18" height="24" fill="#C0392B" opacity="0.88" rx="1"/><rect x="343.0" y="231.6"
+         width="18" height="24" fill="#2E7D32" opacity="0.88" rx="1"/><rect x="327.0" y="240.8"
+         width="18" height="24" fill="#F4D03F" opacity="0.88" rx="1"/><rect x="311.0" y="250.0"
+         width="18" height="24" fill="#1565C0" opacity="0.88" rx="1"/>
+
+
+  <rect x="0" y="0" width="800" height="500" fill="none"
+        stroke="rgba(255,255,255,0.18)" stroke-width="10"/>
+</svg>

@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+
+  <defs>
+    <linearGradient id="ggeneral3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#150A2E"/>
+      <stop offset="55%"  stop-color="#6B2060"/>
+      <stop offset="100%" stop-color="#E84020"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#ggeneral3)"/>
+
+  <ellipse cx="160" cy="95"  rx="80" ry="22" fill="white" opacity="0.1"/>
+  <ellipse cx="200" cy="85"  rx="55" ry="18" fill="white" opacity="0.1"/>
+  <ellipse cx="580" cy="110" rx="90" ry="24" fill="white" opacity="0.1"/>
+  <ellipse cx="630" cy="100" rx="60" ry="18" fill="white" opacity="0.1"/>
+
+  <!-- Far snow-capped peaks -->
+  <polygon points="0,330 70,210 130,260 200,180 270,230 350,160 430,200 510,155 590,195 670,175 740,210 800,190 800,380 0,380"
+           fill="#5A2060" opacity="0.75"/>
+  <!-- Snow caps -->
+  <polygon points="200,180 215,215 185,215" fill="white" opacity="0.55"/>
+  <polygon points="350,160 368,200 332,200" fill="white" opacity="0.6"/>
+  <polygon points="510,155 528,193 492,193" fill="white" opacity="0.6"/>
+  <polygon points="670,175 685,210 655,210" fill="white" opacity="0.5"/>
+  <!-- Mid range -->
+  <polygon points="0,390 60,320 130,360 210,295 290,340 380,280 460,325 550,268 640,308 720,282 800,315 800,500 0,500"
+           fill="#2A1040"/>
+  <!-- Foreground hills -->
+  <polygon points="0,455 140,415 300,445 460,408 620,438 780,412 800,420 800,500 0,500"
+           fill="#120820"/>
+
+  <!-- Dragon body — serpentine S-curve -->
+  <path d="M 300,245
+             C 320,165
+               380,275
+               410,195
+             S 480,155
+               495,220"
+        fill="none" stroke="#1B2631" stroke-width="18" stroke-linecap="round"/>
+  <!-- Body highlight -->
+  <path d="M 300,245
+             C 320,165
+               380,275
+               410,195
+             S 480,155
+               495,220"
+        fill="none" stroke="#D4AC0D" stroke-width="6" stroke-linecap="round" opacity="0.4"/>
+  <!-- Head -->
+  <ellipse cx="500" cy="217" rx="22" ry="15" fill="#1B2631"/>
+  <!-- Snout -->
+  <ellipse cx="518" cy="220" rx="12" ry="9"  fill="#D4AC0D"/>
+  <!-- Nostril -->
+  <circle  cx="524" cy="219" r="3" fill="#1B2631" opacity="0.6"/>
+  <!-- Eye -->
+  <circle  cx="503" cy="210" r="5" fill="#D4AC0D"/>
+  <circle  cx="503" cy="210" r="2.5" fill="rgba(0,0,0,0.7)"/>
+  <!-- Pupil highlight -->
+  <circle  cx="504" cy="209" r="1" fill="white" opacity="0.8"/>
+  <!-- Horns -->
+  <path d="M 496,203 L 488,181 L 500,197" fill="#1B2631"/>
+  <path d="M 506,201 L 500,179 L 512,195" fill="#1B2631"/>
+  <!-- Whiskers -->
+  <line x1="518" y1="217"  x2="540" y2="207"
+        stroke="#D4AC0D" stroke-width="2" opacity="0.6"/>
+  <line x1="518" y1="222"  x2="540" y2="227"
+        stroke="#D4AC0D" stroke-width="2" opacity="0.6"/>
+  <!-- Front claws -->
+  <path d="M 350,260 L 358,285
+           M 350,260 L 342,283
+           M 350,260 L 332,277"
+        stroke="#D4AC0D" stroke-width="3.5" stroke-linecap="round"/>
+  <!-- Rear claws -->
+  <path d="M 435,185 L 443,160
+           M 435,185 L 427,161
+           M 435,185 L 416,167"
+        stroke="#D4AC0D" stroke-width="3.5" stroke-linecap="round"/>
+  <!-- Scale hints -->
+  <path d="M 325,220  Q 337,207  348,220"
+        fill="none" stroke="#D4AC0D" stroke-width="2" opacity="0.5"/>
+  <path d="M 380,243 Q 392,230  404,243"
+        fill="none" stroke="#D4AC0D" stroke-width="2" opacity="0.5"/>
+  <path d="M 440,203 Q 452,190 464,203"
+        fill="none" stroke="#D4AC0D" stroke-width="2" opacity="0.5"/>
+  <!-- Tail flames -->
+  <path d="M 300,245 L 285,233 L 292,259"
+        fill="#D4AC0D" stroke="#D4AC0D" stroke-width="1" opacity="0.7"/>
+
+
+  <rect x="0" y="0" width="800" height="500" fill="none"
+        stroke="rgba(255,255,255,0.18)" stroke-width="10"/>
+</svg>
