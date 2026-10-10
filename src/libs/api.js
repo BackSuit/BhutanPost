@@ -236,11 +236,11 @@ export async function fetchArticle(slug) {
     // Try the search endpoint first — fetches ~50 records instead of 1000
     const searchData = await fetchAPI(
       `/api/v1/articles/search?q=${encodeURIComponent(
-        slug
+        slug.replace(/-/g, " ")
       )}&limit=50&status=published`
-    ).catch(() => ({ results: [] }))
+    ).catch(() => ({ articles: [] }))
 
-    const searchArticle = searchData.results?.find(a => a.slug === slug)
+    const searchArticle = (searchData.articles || searchData.results || [])?.find(a => a.slug === slug)
 
     if (searchArticle) {
       const fullArticle = await fetchAPI(`/api/v1/articles/${searchArticle.id}`)
