@@ -13,6 +13,7 @@ Complete REST API reference for PopArticle content generation platform.
 - [Profile Management](#profile-management)
 - [Message/Contact Endpoints](#messagecontact-endpoints)
 - [Article Endpoints](#article-endpoints)
+  - [Article Reference Endpoints](#article-reference-endpoints)
   - [Search Articles](#search-articles)
 - [Category Endpoints](#category-endpoints)
 - [Comment Endpoints](#comment-endpoints)
@@ -21,6 +22,35 @@ Complete REST API reference for PopArticle content generation platform.
 - [Invitation Endpoints](#invitation-endpoints)
 - [Article Scheduling](#article-scheduling)
 - [Social Media Posting](#social-media-posting)
+- [Subscription Endpoints](#subscription-endpoints)
+- [Affiliate Link Management](#affiliate-link-management)
+  - [Affiliate Link Redirect](#affiliate-link-redirect)
+- [System Administration (Global Admin)](#system-administration-global-admin)
+  - [Admin Dashboard](#admin-dashboard)
+  - [Platform Insights](#platform-insights)
+  - [Content Analytics](#content-analytics)
+  - [Revenue Analytics](#revenue-analytics)
+  - [Admin Tenant Management](#admin-tenant-management)
+  - [Admin User Management](#admin-user-management)
+  - [Global Admin Role Management](#global-admin-role-management)
+  - [Admin Audit Logs](#admin-audit-logs)
+- [Vercel Integration](#vercel-integration)
+  - [Vercel Config (Admin)](#vercel-config-admin)
+    - [Get Active Vercel Config](#get-active-vercel-config)
+    - [Create / Replace Vercel Config](#create--replace-vercel-config)
+    - [Update Vercel Config](#update-vercel-config)
+    - [Delete Vercel Config](#delete-vercel-config)
+  - [Frontend Templates (Admin)](#frontend-templates-admin)
+    - [List All Templates (Admin)](#list-all-templates-admin)
+    - [Create Template](#create-template)
+    - [Update Template](#update-template)
+    - [Delete Template](#delete-template)
+    - [Publish Template](#publish-template)
+    - [Unpublish Template](#unpublish-template)
+    - [Sync Templates from Vercel](#sync-templates-from-vercel)
+  - [Frontend Templates (User)](#frontend-templates-user)
+    - [List Public Templates](#list-public-templates)
+    - [Get Public Template](#get-public-template)
 - [Health Check](#health-check)
 - [Error Responses](#error-responses)
 
@@ -650,13 +680,22 @@ X-Tenant-ID: <tenant_id> (optional)
   "category_id": 1,
   "status": "draft",
   "is_featured": false,
+  "published_at": "2026-06-01T09:00:00",
   "seo": {
     "meta_title": "SEO Title",
     "meta_description": "SEO description for search engines",
     "focus_keyword": "main keyword"
   },
   "tags": ["tag1", "tag2"],
-  "keywords": ["keyword1", "keyword2"]
+  "keywords": ["keyword1", "keyword2"],
+  "references": [
+    {
+      "url": "https://example.com/source-1",
+      "title": "Primary Source",
+      "description": "Background reading",
+      "display_order": 0
+    }
+  ]
 }
 ```
 
@@ -672,9 +711,11 @@ X-Tenant-ID: <tenant_id> (optional)
 - `image`: Image URL or upload file (multipart/form-data)
 - `status`: `draft` (default), `published`, `archived`
 - `is_featured`: Boolean (default: false)
+- `published_at`: ISO 8601 UTC timestamp — see [Scheduled Publishing](#scheduled-publishing) below
 - `seo`: SEO metadata object
 - `tags`: Array of tag names
 - `keywords`: Array of keyword strings
+- `references`: Array of reference objects (`url` required; `title`, `description`, `display_order` optional)
 
 **Response (201):**
 
@@ -696,16 +737,93 @@ X-Tenant-ID: <tenant_id> (optional)
       "meta_description": "SEO description for search engines"
     },
     "tags": ["tag1", "tag2"],
-    "keywords": ["keyword1", "keyword2"]
+    "keywords": ["keyword1", "keyword2"],
+    "references": [
+      {
+        "id": 10,
+        "url": "https://example.com/source-1",
+        "title": "Primary Source",
+        "description": "Background reading",
+        "display_order": 0,
+        "created_at": "2026-07-24T10:00:00.000000"
+      }
+    ]
   }
 }
 ```
 
 **Notes:**
 
-- Checks tenant's monthly article limit (returns 429 if exceeded)
+- Enforces monthly article limit per subscription plan (returns 403 if exceeded)
+- Manual articles do **not** consume AI credits (only AI-generated articles do)
 - Auto-generates slug from title
 - Default status is "draft"
+
+---
+
+### Scheduled Publishing
+
+The `published_at` field lets you schedule a draft article to be published automatically at a future time. It is supported on both [Create Article](#create-article-manual) and [Update Article](#update-article).
+
+#### How it works
+
+| Scenario                                          | What happens                                                                                                                                                                                                                                                                                                |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `published_at` **not provided**                   | Normal behaviour — article status is whatever you pass (`draft` by default). No scheduling occurs.                                                                                                                                                                                                          |
+| `published_at` is a **past or present** timestamp | The value is stored but no scheduled task is created. If status is `published` the article publishes immediately; if `draft` it stays draft.                                                                                                                                                                |
+| `published_at` is a **future** timestamp          | Article is saved as `draft` regardless of the `status` field. A Celery task is dispatched with an ETA equal to `published_at` that will automatically set the article to `published` at the specified time. A periodic fallback sweep also runs every 3 hours to catch any tasks that may have been missed. |
+
+#### Request example — schedule for a future date
+
+```http
+POST /api/v1/articles
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+```json
+{
+  "title": "My Scheduled Article",
+  "content": "Article content here...",
+  "category_id": 1,
+  "published_at": "2026-06-01T09:00:00"
+}
+```
+
+**Response (201):**
+
+```json
+{
+  "id": 42,
+  "title": "My Scheduled Article",
+  "slug": "my-scheduled-article",
+  "status": "draft",
+  "published_at": "2026-06-01T09:00:00.000000",
+  "created_at": "2026-04-09T13:00:00.000000"
+}
+```
+
+> The article is created as `draft`. At `2026-06-01T09:00:00 UTC` it will be automatically published and social-media auto-posting (if configured) will be triggered.
+
+#### Updating the scheduled time
+
+Send a `PUT /api/v1/articles/<id>` with a new `published_at` value. The previous ETA task will simply no-op when it fires (because the article will have already been published by the newer task), so no manual cancellation is needed.
+
+```json
+{
+  "published_at": "2026-07-15T08:00:00"
+}
+```
+
+#### Publishing immediately instead
+
+Call `POST /api/v1/articles/<id>/publish` at any time to publish immediately, ignoring the scheduled time. This endpoint is idempotent — if the article is already published it returns 200 without changes.
+
+#### `published_at` format
+
+- ISO 8601, UTC (e.g. `2026-06-01T09:00:00` or `2026-06-01T09:00:00Z`)
+- Timezone offsets are accepted and normalised to UTC internally
+- Returns 400 if the value cannot be parsed
 
 ---
 
@@ -722,25 +840,49 @@ X-Tenant-ID: <tenant_id> (optional)
 
 ```json
 {
-  "category_id": 1,
   "topic": "The Future of Artificial Intelligence",
+  "description": "Focus on recent breakthroughs in generative AI and their impact on healthcare and education.",
+  "category_id": 1,
   "keywords": ["AI", "machine learning", "future tech"],
   "tone": "professional",
   "length": "medium",
   "generate_image": true,
-  "include_content_images": false
+  "include_content_images": false,
+  "additional_context": "Include statistics from 2024 reports.",
+  "model": "gpt-4o-mini"
 }
 ```
 
 **Request Parameters:**
 
-- `category_id` (required): Category ID for the article
-- `topic` (required): Main topic/subject for the article
+- `topic` (optional\*): Main topic/subject for the article
+- `description` (optional\*): A description or content outline for the article. When provided without a `topic`, the AI infers a suitable topic. The description is also included as additional context for richer article generation
+- `category_id` (optional): Category ID for the article. If not provided, the AI automatically selects the most suitable category from the tenant's existing categories based on the topic and/or description
 - `keywords` (optional): Array of target keywords to include
 - `tone` (optional): Writing tone (default: "professional")
 - `length` (optional): Article length - "short", "medium", or "long" (default: "medium")
 - `generate_image` (optional): Whether to generate a main featured image using DALL-E (default: `true`)
 - `include_content_images` (optional): Whether to include relevant images within the content (default: `false`)
+- `additional_context` (optional): Additional context, ideas, facts, or must-include details for the article. Accepts a string or an array of strings. The AI will prioritize incorporating this information into the generated article. Useful when the topic is based on specific news, real events, or when certain facts and angles must not be missed
+- `model` (optional): OpenAI model to use for this request (e.g. `gpt-4o`, `gpt-4o-mini`). If not specified the system-wide default (configured via `OPENAI_MODEL`) will be used.
+
+> **\*Note:** At least one of `topic` or `description` must be provided.
+
+**Flexible Input Examples:**
+
+```json
+// Topic only — AI auto-selects the best category
+{"topic": "Sustainable Energy Trends"}
+
+// Description only — AI infers topic and selects category
+{"description": "A deep dive into how solar panel efficiency has doubled in the last decade"}
+
+// Both topic and description, no category
+{"topic": "Solar Energy", "description": "Focus on residential adoption rates in 2025"}
+
+// Original flow: topic + category_id
+{"topic": "Solar Energy", "category_id": 42}
+```
 
 **Response (201):**
 
@@ -768,15 +910,29 @@ X-Tenant-ID: <tenant_id> (optional)
 
 **Notes:**
 
-- Checks tenant's monthly article limit
+- At least one of `topic` or `description` must be provided
+- If `category_id` is omitted, the AI selects the best matching category from the tenant's existing categories
+- If only `description` is provided (no `topic`), the AI infers a suitable topic from it
+- Enforces monthly article limit and AI credit limit (returns 403 if either is exceeded)
+- Enforces AI model access per subscription plan (returns 403 if the requested model is not allowed on the user's plan)
 - Article created with status "draft"
-- Returns 429 if limit exceeded
 - Task runs asynchronously via Celery
 - **NEW**: AI-generated content no longer includes redundant title headers (starts directly with content)
 - **NEW**: Optional DALL-E image generation for main article featured image
 - **NEW**: Generated images are automatically processed and uploaded to S3/CDN
 - **DALL-E Costs**: Standard quality 1792x1024 images cost approximately $0.080 per image
 - Image URLs from DALL-E expire after 1 hour - they are automatically downloaded and uploaded to your S3 bucket
+
+**Model Selection:** The platform uses the `OPENAI_MODEL` environment variable as the default model (see `.env.example`). You can override the model per-request by providing the optional `model` field in AI endpoints. The available models depend on your subscription plan:
+
+| Plan       | Allowed Models                                              |
+| ---------- | ----------------------------------------------------------- |
+| Free       | `gpt-4o-mini`                                               |
+| Basic      | `gpt-4o-mini`, `gpt-4o`                                     |
+| Pro        | `gpt-4o-mini`, `gpt-4o`, `gpt-4.5-preview`                  |
+| Enterprise | `gpt-4o-mini`, `gpt-4o`, `gpt-4.5-preview`, `o1`, `o3-mini` |
+
+If no `model` is specified, the system default is used without plan-based restriction.
 
 ---
 
@@ -952,7 +1108,16 @@ X-Tenant-ID: <tenant_id> (optional)
       "focus_keyword": "keyword"
     },
     "tags": ["tag1", "tag2"],
-    "keywords": ["keyword1", "keyword2"]
+    "keywords": ["keyword1", "keyword2"],
+    "references": [
+      {
+        "id": 10,
+        "url": "https://example.com/source-1",
+        "title": "Primary Source",
+        "description": "Background reading",
+        "display_order": 0
+      }
+    ]
   }
 }
 ```
@@ -961,6 +1126,78 @@ X-Tenant-ID: <tenant_id> (optional)
 
 - `view_count` and `comment_count` are always included
 - View count is NOT incremented on GET; use the `/view` endpoint to track views
+
+---
+
+### Get Article by Slug
+
+Retrieve a specific article directly by its unique SEO slug.
+
+```http
+GET /api/v1/articles/<slug>
+GET /api/v1/articles/slug/<slug>
+X-Tenant-ID: <tenant_id> (optional)
+X-Tenant-Slug: <tenant_slug> (optional)
+```
+
+**Parameters:**
+- `slug` (path, required): The unique URL-friendly slug of the article (e.g. `direct-slug-test-article`).
+- `X-Tenant-ID` / `X-Tenant-Slug` (header, optional): Tenant identifier for multi-tenant isolation.
+
+**Response (200):**
+
+Same response shape as `GET /api/v1/articles/<id>`:
+
+```json
+{
+  "article": {
+    "id": 1,
+    "title": "Article Title",
+    "slug": "article-title",
+    "content": "Full markdown content...",
+    "excerpt": "Brief summary...",
+    "image": "https://your-cdn.cloudfront.net/articles/123/main/abc123.jpg",
+    "category": "Technology",
+    "status": "published",
+    "is_featured": true,
+    "view_count": 151,
+    "comment_count": 8,
+    "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
+    "created_at": "2025-01-01T00:00:00.000000",
+    "updated_at": "2025-01-01T12:00:00.000000",
+    "published_at": "2025-01-01T13:00:00.000000",
+    "seo": {
+      "meta_title": "SEO Title",
+      "meta_description": "SEO Description",
+      "summary": "Summary",
+      "focus_keyword": "keyword"
+    },
+    "tags": ["tag1", "tag2"],
+    "keywords": ["keyword1", "keyword2"],
+    "references": [
+      {
+        "id": 10,
+        "url": "https://example.com/source-1",
+        "title": "Primary Source",
+        "description": "Background reading",
+        "display_order": 0
+      }
+    ]
+  }
+}
+```
+
+**Error Responses:**
+- `404 Not Found`: If no article exists with the requested slug (or if it belongs to another tenant).
+```json
+{
+  "error": "Article with slug \"<slug>\" not found"
+}
+```
+
+**Slug Uniqueness:**
+- Article slugs are enforced unique in the PostgreSQL database via a unique index (`ix_articles_slug`).
+- When creating or updating an article, slugs are automatically generated or deduplicated (e.g., appending `-1`, `-2`) to guarantee uniqueness.
 
 ---
 
@@ -984,8 +1221,15 @@ X-Tenant-ID: <tenant_id> (optional)
   "status": "published",
   "is_featured": true,
   "category_id": 2,
+  "published_at": "2026-06-01T09:00:00",
   "tags": ["new-tag"],
-  "keywords": ["new-keyword"]
+  "keywords": ["new-keyword"],
+  "references": [
+    {
+      "url": "https://example.com/new-source",
+      "title": "New Source"
+    }
+  ]
 }
 ```
 
@@ -1025,6 +1269,8 @@ X-Tenant-ID: <tenant_id> (optional)
 
 - User must own the article (403 otherwise)
 - Slug auto-generated from title if title changes
+- Setting a future `published_at` keeps the article as `draft` and schedules automatic publishing — see [Scheduled Publishing](#scheduled-publishing)
+- If `references` is provided in update payload, it replaces the full existing reference list for that article
 
 ---
 
@@ -1086,7 +1332,202 @@ X-Tenant-ID: <tenant_id> (optional)
 **Notes:**
 
 - User must own the article (403 otherwise)
-- Sets status to "published" and sets published_at timestamp
+- Sets `status` to `"published"` immediately, regardless of any scheduled `published_at`
+- Preserves the article's existing `published_at` if one was already set (e.g. via scheduling); otherwise sets it to the current UTC time
+- Idempotent — returns 200 without changes if the article is already published
+- Triggers social-media auto-posting if configured
+
+---
+
+### Article Reference Endpoints
+
+Reference endpoints manage one-or-more source links attached to each article.
+
+#### List Tenant References
+
+```http
+GET /api/v1/articles/references
+Authorization: Bearer <access_token>
+X-Tenant-ID: <tenant_id> (optional)
+```
+
+Lists references across all articles visible in the current tenant scope.
+
+**Query Parameters:**
+
+- `limit` / `per_page` (optional): Default `50`, max `100`
+- `offset` (optional): Default `0`
+- `status` (optional): Filter by article status (`draft`, `published`, `archived`)
+- `user_only` (optional): `true` to return only references from your own articles
+- `include_global` (optional): `true` (default) to include global article references (`tenant_id = null`) when `X-Tenant-ID` is present
+
+**Response (200):**
+
+```json
+{
+  "total": 2,
+  "limit": 50,
+  "offset": 0,
+  "page": 1,
+  "per_page": 50,
+  "filters": {
+    "user_only": false,
+    "status": "published",
+    "include_global": true
+  },
+  "references": [
+    {
+      "id": 10,
+      "url": "https://example.com/source-1",
+      "title": "Primary Source",
+      "description": "Background reading",
+      "display_order": 0,
+      "created_at": "2026-07-24T10:00:00.000000",
+      "article": {
+        "id": 101,
+        "title": "Article Title",
+        "slug": "article-title",
+        "status": "published",
+        "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
+        "user_id": 5
+      }
+    }
+  ]
+}
+```
+
+#### List References
+
+```http
+GET /api/v1/articles/<id>/references
+X-Tenant-ID: <tenant_id> (optional)
+```
+
+**Response (200):**
+
+```json
+{
+  "references": [
+    {
+      "id": 10,
+      "url": "https://example.com/source-1",
+      "title": "Primary Source",
+      "description": "Background reading",
+      "display_order": 0,
+      "created_at": "2026-07-24T10:00:00.000000"
+    }
+  ]
+}
+```
+
+#### Add Reference(s)
+
+```http
+POST /api/v1/articles/<id>/references
+Authorization: Bearer <access_token>
+Content-Type: application/json
+X-Tenant-ID: <tenant_id> (optional)
+```
+
+Accepts either one object or an array of objects.
+
+**Single reference request:**
+
+```json
+{
+  "url": "https://example.com/source-1",
+  "title": "Primary Source",
+  "description": "Background reading",
+  "display_order": 0
+}
+```
+
+**Multiple references request:**
+
+```json
+[
+  {
+    "url": "https://example.com/source-1",
+    "title": "Primary Source"
+  },
+  {
+    "url": "https://example.com/source-2",
+    "title": "Secondary Source"
+  }
+]
+```
+
+**Response (201):**
+
+```json
+{
+  "references": [
+    {
+      "id": 10,
+      "url": "https://example.com/source-1",
+      "title": "Primary Source",
+      "description": "Background reading",
+      "display_order": 0,
+      "created_at": "2026-07-24T10:00:00.000000"
+    }
+  ]
+}
+```
+
+#### Update Reference
+
+```http
+PUT /api/v1/articles/<id>/references/<reference_id>
+Authorization: Bearer <access_token>
+Content-Type: application/json
+X-Tenant-ID: <tenant_id> (optional)
+```
+
+**Request Body (partial update):**
+
+```json
+{
+  "title": "Updated Source Title",
+  "display_order": 1
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "reference": {
+    "id": 10,
+    "url": "https://example.com/source-1",
+    "title": "Updated Source Title",
+    "description": "Background reading",
+    "display_order": 1,
+    "created_at": "2026-07-24T10:00:00.000000"
+  }
+}
+```
+
+#### Delete Reference
+
+```http
+DELETE /api/v1/articles/<id>/references/<reference_id>
+Authorization: Bearer <access_token>
+X-Tenant-ID: <tenant_id> (optional)
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Reference deleted successfully"
+}
+```
+
+**Notes:**
+
+- `url` is required when creating references
+- Reference management requires the same article ownership/tenant permissions as article update/delete
+- Deleting an article automatically deletes its references
 
 ---
 
@@ -1607,8 +2048,63 @@ GET /api/v1/comments/<comment_id>
     "created_at": "2025-12-31T12:00:00.000000",
     "updated_at": "2025-12-31T12:00:00.000000",
     "replies": [],
-    "reply_count": 0
+    "reply_count": 0,
+    "has_replies": false
   }
+}
+```
+
+### Get Comment Replies (On-Demand Loading)
+
+Fetch replies to a specific comment on demand. This endpoint supports a "Load replies" button pattern in the UI, improving performance and reducing initial page load times.
+
+```http
+GET /api/v1/comments/<comment_id>/replies
+```
+
+**Query Parameters:**
+
+- `limit` (optional): Maximum number of replies to return (default: 50, max: 200)
+- `offset` (optional): Number of replies to skip (default: 0)
+- `include_unapproved` (optional): Include unapproved replies (admin only, default: false)
+
+**Response (200):**
+
+```json
+{
+  "parent_id": 1,
+  "replies": [
+    {
+      "id": 2,
+      "article_id": 123,
+      "user": {
+        "id": 6,
+        "username": "janedoe",
+        "full_name": "Jane Doe",
+        "email": "jane@example.com"
+      },
+      "content": "I agree with your point!",
+      "parent_id": 1,
+      "is_approved": true,
+      "is_edited": false,
+      "created_at": "2025-12-31T12:30:00.000000",
+      "updated_at": "2025-12-31T12:30:00.000000",
+      "reply_count": 0,
+      "has_replies": false
+    }
+  ],
+  "total_count": 1,
+  "limit": 50,
+  "offset": 0,
+  "has_more": false
+}
+```
+
+**Error Response (404):**
+
+```json
+{
+  "error": "Parent comment not found"
 }
 ```
 
@@ -2128,6 +2624,8 @@ Auto-creates team member entries for all tenant members who don't have one yet. 
 
 **Notes:**
 
+- If a tenant user has a `profile_image` on their platform account, the sync operation copies that URL into the `profile_photo` field of the created team member entry. This keeps the team list visually in sync with user profiles.
+
 - Only owners and admins can sync users
 - Skips users who already have team entries
 - Auto-assigns role based on user's tenant membership role
@@ -2166,10 +2664,8 @@ Content-Type: application/json
     "slug": "my-awesome-blog",
     "primary_domain": "myblog.com",
     "allowed_domains": ["myblog.com"],
-    "plan": "free",
     "is_active": true,
     "is_verified": false,
-    "monthly_article_limit": 10,
     "settings": {},
     "branding": {},
     "api_key_prefix": "mab_",
@@ -2178,18 +2674,12 @@ Content-Type: application/json
 }
 ```
 
-**Plans:**
-
-- `free`: 10 articles/month
-- `starter`: 50 articles/month
-- `professional`: 200 articles/month
-- `enterprise`: Unlimited
-
 **Notes:**
 
 - Authenticated user becomes owner
 - Domain must be unique and format: "domain.com" (no protocol)
 - API key prefix generated from first 3 chars of slug
+- Article limits are tracked at the user/subscription level, not per-tenant
 
 ---
 
@@ -2239,15 +2729,11 @@ Authorization: Bearer <access_token>
     "slug": "my-awesome-blog",
     "primary_domain": "myblog.com",
     "allowed_domains": ["myblog.com", "www.myblog.com"],
-    "plan": "free",
     "is_active": true,
     "is_verified": true,
-    "monthly_article_limit": 10,
-    "monthly_article_count": 5,
     "settings": {},
     "branding": {},
     "webhook_url": null,
-    "billing_email": null,
     "created_at": "2025-01-01T00:00:00.000000",
     "api_key_prefix": "mab_"
   },
@@ -2295,14 +2781,11 @@ Content-Type: application/json
     "slug": "updated-blog-name",
     "primary_domain": "myblog.com",
     "allowed_domains": ["myblog.com", "www.myblog.com"],
-    "plan": "free",
     "is_active": true,
     "is_verified": true,
-    "monthly_article_limit": 10,
     "settings": {},
     "branding": {},
     "webhook_url": "https://myblog.com/webhooks",
-    "billing_email": "billing@myblog.com",
     "created_at": "2025-01-01T00:00:00.000000",
     "updated_at": "2025-01-01T12:00:00.000000",
     "api_key_prefix": "upd_"
@@ -2473,9 +2956,11 @@ Content-Type: application/json
 
 **Notes:**
 
+- **Requires Basic plan or higher** — Free plan users cannot invite team members (returns 403)
 - Only owners and admins can invite (403 otherwise)
 - Expires in 7 days
 - Sends email with invitation link (if email configured)
+- Super admins bypass the subscription plan check
 
 ---
 
@@ -2678,10 +3163,10 @@ X-Tenant-ID: <tenant_id> (optional)
 
 **Query Parameters:**
 
-| Parameter      | Type    | Default | Description                        |
-| -------------- | ------- | ------- | ---------------------------------- |
-| `enabled_only` | boolean | false   | Filter to only enabled configs     |
-| `limit`        | integer | 100     | Maximum number of results          |
+| Parameter      | Type    | Default | Description                    |
+| -------------- | ------- | ------- | ------------------------------ |
+| `enabled_only` | boolean | false   | Filter to only enabled configs |
+| `limit`        | integer | 100     | Maximum number of results      |
 
 **Response (200):**
 
@@ -2702,8 +3187,11 @@ X-Tenant-ID: <tenant_id> (optional)
       "target_keywords": ["technology", "innovation", "AI"],
       "word_count": 1500,
       "tone": "professional",
+      "ai_model": null,
       "generate_image": true,
       "auto_publish": false,
+      "auto_post_social": false,
+      "social_media_config_id": null,
       "is_enabled": true,
       "priority": 1,
       "last_run_at": "2025-01-30T08:00:00.000000",
@@ -2740,8 +3228,11 @@ X-Tenant-ID: <tenant_id> (optional)
   "target_keywords": ["technology", "innovation", "AI"],
   "word_count": 1500,
   "tone": "professional",
+  "ai_model": null,
   "generate_image": true,
   "auto_publish": false,
+  "auto_post_social": false,
+  "social_media_config_id": null,
   "is_enabled": true,
   "priority": 1,
   "last_run_at": "2025-01-30T08:00:00.000000",
@@ -2784,7 +3275,10 @@ X-Tenant-ID: <tenant_id> (optional)
   "word_count": 1500,
   "tone": "professional",
   "generate_image": true,
+  "ai_model": "gpt-4o-mini",
   "auto_publish": false,
+  "auto_post_social": false,
+  "social_media_config_id": null,
   "is_enabled": true,
   "priority": 1
 }
@@ -2792,27 +3286,35 @@ X-Tenant-ID: <tenant_id> (optional)
 
 **Required Fields:**
 
-| Field         | Type    | Description                              |
-| ------------- | ------- | ---------------------------------------- |
-| `category_id` | integer | Category ID to schedule articles for     |
+| Field         | Type    | Description                          |
+| ------------- | ------- | ------------------------------------ |
+| `category_id` | integer | Category ID to schedule articles for |
 
 **Optional Fields:**
 
-| Field              | Type    | Default        | Description                                       |
-| ------------------ | ------- | -------------- | ------------------------------------------------- |
-| `articles_per_day` | integer | 1              | Number of articles to generate daily (1-10)       |
-| `scheduled_hour`   | integer | 6              | Hour in UTC (0-23) to run                         |
-| `scheduled_minute` | integer | 0              | Minute (0-59) to run                              |
-| `default_topic`    | string  | null           | Default topic/theme for article generation        |
-| `target_keywords`  | array   | null           | List of target keywords for SEO                   |
-| `word_count`       | integer | 1000           | Target word count for generated articles          |
-| `tone`             | string  | "professional" | Writing tone (e.g., professional, casual, formal) |
-| `generate_image`   | boolean | true           | Generate main article image using DALL-E          |
-| `auto_publish`     | boolean | false          | Auto-publish articles or save as draft            |
-| `is_enabled`       | boolean | true           | Enable/disable scheduling                         |
-| `priority`         | integer | 0              | Processing priority (higher = processed first)    |
+| Field                    | Type    | Default        | Description                                                                                                                                |
+| ------------------------ | ------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `articles_per_day`       | integer | 1              | Number of articles to generate daily (1-10)                                                                                                |
+| `scheduled_hour`         | integer | 6              | Hour in UTC (0-23) to run                                                                                                                  |
+| `scheduled_minute`       | integer | 0              | Minute (0-59) to run                                                                                                                       |
+| `default_topic`          | string  | null           | Default topic/theme for article generation                                                                                                 |
+| `target_keywords`        | array   | null           | List of target keywords for SEO                                                                                                            |
+| `word_count`             | integer | 1000           | Target word count for generated articles                                                                                                   |
+| `tone`                   | string  | "professional" | Writing tone (e.g., professional, casual, formal)                                                                                          |
+| `generate_image`         | boolean | true           | Generate main article image using DALL-E                                                                                                   |
+| `auto_publish`           | boolean | false          | Auto-publish articles or save as draft                                                                                                     |
+| `auto_post_social`       | boolean | false          | Auto-post generated articles to social media                                                                                               |
+| `social_media_config_id` | integer | null           | Social media config ID to use for auto-posting (must belong to tenant)                                                                     |
+| `is_enabled`             | boolean | true           | Enable/disable scheduling                                                                                                                  |
+| `priority`               | integer | 0              | Processing priority (higher = processed first)                                                                                             |
+| `ai_model`               | string  | null           | OpenAI model to use for scheduled generation (e.g. `gpt-4o`, `gpt-4o-mini`). If omitted uses system default configured via `OPENAI_MODEL`. |
 
 **Response (201):** Same format as Get Scheduling Configuration.
+
+**Notes:**
+
+- If `social_media_config_id` is provided it must belong to the same tenant or be accessible by the requester; otherwise the request will fail with `404`.
+- `auto_post_social` only takes effect when `social_media_config_id` is set; enabling `auto_post_social` without a config will result in a warning on schedule execution.
 
 **Error Responses:**
 
@@ -2835,10 +3337,16 @@ X-Tenant-ID: <tenant_id> (optional)
   "articles_per_day": 5,
   "scheduled_hour": 10,
   "scheduled_minute": 30,
+  "tone": "casual",
+  "ai_model": "gpt-4o",
   "is_enabled": false,
-  "auto_publish": true
+  "auto_publish": true,
+  "auto_post_social": false,
+  "social_media_config_id": null
 }
 ```
+
+**Updatable fields include:** `articles_per_day`, `scheduled_hour`, `scheduled_minute`, `default_topic`, `target_keywords`, `word_count`, `tone`, `ai_model`, `generate_image`, `auto_publish`, `auto_post_social`, `social_media_config_id`, `is_enabled`, `priority`.
 
 **Response (200):** Same format as Get Scheduling Configuration.
 
@@ -2882,11 +3390,11 @@ X-Tenant-ID: <tenant_id> (optional)
 
 **Query Parameters:**
 
-| Parameter   | Type    | Default | Description                                    |
-| ----------- | ------- | ------- | ---------------------------------------------- |
-| `config_id` | integer | null    | Filter by scheduling config ID                 |
-| `status`    | string  | null    | Filter by status (success, failed, skipped)    |
-| `limit`     | integer | 50      | Maximum number of results                      |
+| Parameter   | Type    | Default | Description                                 |
+| ----------- | ------- | ------- | ------------------------------------------- |
+| `config_id` | integer | null    | Filter by scheduling config ID              |
+| `status`    | string  | null    | Filter by status (success, failed, skipped) |
+| `limit`     | integer | 50      | Maximum number of results                   |
 
 **Response (200):**
 
@@ -2934,9 +3442,9 @@ X-Tenant-ID: <tenant_id> (optional)
 
 **Query Parameters:**
 
-| Parameter | Type    | Default | Description                    |
-| --------- | ------- | ------- | ------------------------------ |
-| `days`    | integer | 7       | Number of days to look back    |
+| Parameter | Type    | Default | Description                 |
+| --------- | ------- | ------- | --------------------------- |
+| `days`    | integer | 7       | Number of days to look back |
 
 **Response (200):**
 
@@ -2957,10 +3465,20 @@ X-Tenant-ID: <tenant_id> (optional)
 ## Social Media Posting
 
 Automated social media posting for articles via Meta (Facebook, Instagram) with AI-generated content. This system allows you to:
+
 - Configure Facebook Pages and Instagram Business accounts for automated posting
 - Generate AI-powered engaging posts from article content
 - Post immediately or schedule for later
 - Track posting history and statistics
+
+### User-Level Ownership and Tenant Sharing
+
+Social media accounts are connected at the **user level**. This means:
+
+- Users own their connected social media accounts
+- The same account can be shared across multiple tenants
+- Per-tenant settings (article_base_url, auto_post_enabled) can override defaults
+- Users can attach/detach their accounts from tenants they have access to
 
 ### Configuration Endpoints
 
@@ -2974,10 +3492,11 @@ X-Tenant-ID: <tenant_id>
 
 **Query Parameters:**
 
-| Parameter     | Type    | Description                                    |
-|--------------|---------|------------------------------------------------|
-| platform     | string  | Filter by platform ('facebook', 'instagram', 'facebook_page') |
-| active_only  | boolean | Only return active configurations (default: false) |
+| Parameter   | Type    | Description                                                          |
+| ----------- | ------- | -------------------------------------------------------------------- |
+| platform    | string  | Filter by platform ('facebook', 'instagram', 'facebook_page')        |
+| active_only | boolean | Only return active configurations (default: false)                   |
+| scope       | string  | 'user' (owned), 'tenant' (shared with tenant), 'all' (both, default) |
 
 **Response (200):**
 
@@ -2987,6 +3506,7 @@ X-Tenant-ID: <tenant_id>
   "configs": [
     {
       "id": 1,
+      "user_id": 5,
       "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
       "platform": "facebook_page",
       "account_name": "My Business Page",
@@ -2997,6 +3517,7 @@ X-Tenant-ID: <tenant_id>
       "post_template": null,
       "auto_post_enabled": false,
       "is_active": true,
+      "is_owner": true,
       "last_verified_at": "2026-01-31T12:00:00.000000",
       "created_at": "2026-01-15T10:00:00.000000",
       "updated_at": "2026-01-31T12:00:00.000000"
@@ -3054,6 +3575,7 @@ Content-Type: application/json
   "token_expires_at": "2026-04-01T00:00:00Z",
   "refresh_token": "optional_refresh_token",
   "platform_data": { "page_category": "Business" },
+  "article_base_url": "https://www.example.com/article/",
   "default_hashtags": ["tech", "news"],
   "post_template": "Check out our latest article: {title}",
   "auto_post_enabled": false
@@ -3062,23 +3584,42 @@ Content-Type: application/json
 
 **Required Fields:**
 
-| Field        | Type   | Description                                           |
-|-------------|--------|-------------------------------------------------------|
-| platform    | string | One of: 'facebook', 'facebook_page', 'instagram'      |
-| account_name| string | Friendly name for the account                         |
-| account_id  | string | Platform-specific account or page ID                  |
-| access_token| string | OAuth access token from Meta                          |
+| Field        | Type   | Description                                      |
+| ------------ | ------ | ------------------------------------------------ |
+| platform     | string | One of: 'facebook', 'facebook_page', 'instagram' |
+| account_name | string | Friendly name for the account                    |
+| account_id   | string | Platform-specific account or page ID             |
+| access_token | string | OAuth access token from Meta                     |
 
 **Optional Fields:**
 
-| Field            | Type    | Description                                      |
-|-----------------|---------|--------------------------------------------------|
-| token_expires_at | string  | Token expiration (ISO format)                    |
-| refresh_token    | string  | Refresh token if available                       |
-| platform_data    | object  | Additional platform-specific data                |
-| default_hashtags | array   | Default hashtags to include in posts             |
-| post_template    | string  | Custom template for posts                        |
-| auto_post_enabled| boolean | Auto-post new articles (default: false)          |
+| Field             | Type    | Description                                                  |
+| ----------------- | ------- | ------------------------------------------------------------ |
+| token_expires_at  | string  | Token expiration (ISO format)                                |
+| refresh_token     | string  | Refresh token if available                                   |
+| platform_data     | object  | Additional platform-specific data                            |
+| article_base_url  | string  | Base URL for articles (e.g., "https://example.com/article/") |
+| default_hashtags  | array   | Default hashtags to include in posts                         |
+| post_template     | string  | Custom template for posts                                    |
+| auto_post_enabled | boolean | Auto-post new articles when generated (default: false)       |
+
+**Auto-Posting on Article Generation:**
+
+When `auto_post_enabled` is set to `true`, the system will automatically:
+
+1. Generate AI-powered engaging content for the article
+2. Post to this social media account immediately after article creation
+3. Use the configured `article_base_url` to construct the article link
+
+This happens asynchronously in the background when `/api/v1/articles/generate` is called.
+
+**Article URL Construction:**
+
+When `article_base_url` is configured, article links are automatically constructed:
+
+- Base URL: `https://www.booxtore.com/article/`
+- Article slug: `my-article-title`
+- Final URL: `https://www.booxtore.com/article/my-article-title`
 
 **Response (201):**
 
@@ -3117,13 +3658,104 @@ Content-Type: application/json
 
 #### Delete Configuration
 
+Only the owner can delete a configuration. Non-owners can only detach from their tenant.
+
 ```http
 DELETE /api/v1/social-media/configs/<config_id>
 Authorization: Bearer <token>
 X-Tenant-ID: <tenant_id>
 ```
 
-**Response (204):** No content.
+**Response (204):** No content (if owner deleted the config).
+
+**Response (200):** Config detached from tenant (if non-owner).
+
+```json
+{
+  "message": "Configuration detached from tenant"
+}
+```
+
+#### Attach Configuration to Tenant
+
+Attach a social media config you own to a tenant.
+
+```http
+POST /api/v1/social-media/configs/<config_id>/attach
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
+  "article_base_url": "https://www.example.com/article/",
+  "auto_post_enabled": true
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Configuration attached to tenant"
+}
+```
+
+#### Detach Configuration from Tenant
+
+Remove a config from a tenant (does not delete the config).
+
+```http
+POST /api/v1/social-media/configs/<config_id>/detach
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "tenant_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Configuration detached from tenant"
+}
+```
+
+#### List Tenants for Configuration
+
+List all tenants a configuration is attached to (owner only).
+
+```http
+GET /api/v1/social-media/configs/<config_id>/tenants
+Authorization: Bearer <token>
+```
+
+**Response (200):**
+
+```json
+{
+  "total": 2,
+  "tenants": [
+    {
+      "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
+      "tenant_name": "My Website",
+      "tenant_slug": "my-website",
+      "article_base_url": "https://mywebsite.com/article/",
+      "auto_post_enabled": true,
+      "attached_at": "2026-02-01T10:00:00.000000"
+    }
+  ]
+}
+```
 
 #### Verify Token
 
@@ -3164,24 +3796,33 @@ Content-Type: application/json
 ```json
 {
   "article_id": 123,
+  "config_id": 1,
   "platform": "facebook",
   "style": "engaging",
   "include_link": true,
-  "custom_hashtags": ["extra", "tags"],
-  "article_url": "https://myblog.com/articles/my-article"
+  "custom_hashtags": ["extra", "tags"]
 }
 ```
 
 **Parameters:**
 
-| Field          | Type    | Required | Description                                              |
-|---------------|---------|----------|----------------------------------------------------------|
-| article_id    | integer | Yes      | ID of the article to generate post for                   |
-| platform      | string  | No       | Target platform (default: 'facebook')                    |
-| style         | string  | No       | Post style: 'engaging', 'professional', 'casual', 'clickbait' |
-| include_link  | boolean | No       | Include article link in post (default: true)             |
-| custom_hashtags| array  | No       | Additional hashtags to include                           |
-| article_url   | string  | No       | Custom URL to use for the article link                   |
+| Field           | Type    | Required | Description                                                   |
+| --------------- | ------- | -------- | ------------------------------------------------------------- |
+| article_id      | integer | Yes      | ID of the article to generate post for                        |
+| config_id       | integer | No       | Config ID (uses config's article_base_url for link)           |
+| platform        | string  | No       | Target platform (default: 'facebook')                         |
+| style           | string  | No       | Post style: 'engaging', 'professional', 'casual', 'clickbait' |
+| include_link    | boolean | No       | Include article link in post (default: true)                  |
+| custom_hashtags | array   | No       | Additional hashtags to include                                |
+| article_url     | string  | No       | Override URL (if not provided, uses config's base URL + slug) |
+
+**URL Construction:**
+
+The article link is determined in this order:
+
+1. If `article_url` is provided, use it directly
+2. If `config_id` is provided and config has `article_base_url`, construct URL as: `{article_base_url}/{article.slug}`
+3. Otherwise, use a placeholder URL
 
 **Response (200):**
 
@@ -3195,8 +3836,8 @@ Content-Type: application/json
     "call_to_action": "Read the full story!",
     "emoji_enhanced": true
   },
-  "formatted_content": "🚀 You won't believe what we discovered about AI technology! This changes everything...\n\n👉 Read the full story!\n\n🔗 https://myblog.com/articles/my-article\n\n#AI #technology #innovation",
-  "character_count": 195
+  "formatted_content": "🚀 You won't believe what we discovered about AI technology! This changes everything...\n\n👉 Read the full story!\n\n🔗 https://www.booxtore.com/article/ai-technology-discovery\n\n#AI #technology #innovation",
+  "character_count": 210
 }
 ```
 
@@ -3265,22 +3906,22 @@ Content-Type: application/json
 
 **Required Fields:**
 
-| Field        | Type    | Description                           |
-|-------------|---------|---------------------------------------|
-| config_id   | integer | Social media configuration ID         |
-| article_id  | integer | Article being shared                  |
-| post_content| string  | The post text content                 |
+| Field        | Type    | Description                   |
+| ------------ | ------- | ----------------------------- |
+| config_id    | integer | Social media configuration ID |
+| article_id   | integer | Article being shared          |
+| post_content | string  | The post text content         |
 
 **Optional Fields:**
 
-| Field         | Type    | Description                                    |
-|--------------|---------|------------------------------------------------|
-| image_url    | string  | Image URL to include (required for Instagram)  |
-| link_url     | string  | Article link to share                          |
-| hashtags     | array   | Additional hashtags                            |
-| scheduled_for| string  | Schedule post for later (ISO datetime)         |
-| ai_generated | boolean | Whether content was AI-generated (default: true)|
-| was_edited   | boolean | Whether user edited content (default: false)   |
+| Field         | Type    | Description                                      |
+| ------------- | ------- | ------------------------------------------------ |
+| image_url     | string  | Image URL to include (required for Instagram)    |
+| link_url      | string  | Article link to share                            |
+| hashtags      | array   | Additional hashtags                              |
+| scheduled_for | string  | Schedule post for later (ISO datetime)           |
+| ai_generated  | boolean | Whether content was AI-generated (default: true) |
+| was_edited    | boolean | Whether user edited content (default: false)     |
 
 **Response (201) - Immediate Post:**
 
@@ -3327,13 +3968,13 @@ X-Tenant-ID: <tenant_id>
 
 **Query Parameters:**
 
-| Parameter   | Type    | Description                                |
-|------------|---------|-------------------------------------------|
-| config_id  | integer | Filter by configuration                    |
-| article_id | integer | Filter by article                          |
+| Parameter  | Type    | Description                                                   |
+| ---------- | ------- | ------------------------------------------------------------- |
+| config_id  | integer | Filter by configuration                                       |
+| article_id | integer | Filter by article                                             |
 | status     | string  | Filter by status: 'pending', 'success', 'failed', 'scheduled' |
-| limit      | integer | Maximum results (default: 50)              |
-| offset     | integer | Pagination offset                          |
+| limit      | integer | Maximum results (default: 50)                                 |
+| offset     | integer | Pagination offset                                             |
 
 **Response (200):**
 
@@ -3387,9 +4028,9 @@ X-Tenant-ID: <tenant_id>
 
 **Query Parameters:**
 
-| Parameter | Type    | Description                      |
-|----------|---------|----------------------------------|
-| days     | integer | Days to look back (default: 30)  |
+| Parameter | Type    | Description                     |
+| --------- | ------- | ------------------------------- |
+| days      | integer | Days to look back (default: 30) |
 
 **Response (200):**
 
@@ -3419,33 +4060,84 @@ These endpoints provide a complete OAuth flow for connecting Facebook and Instag
 
 Initiate the OAuth flow to connect Facebook Pages and Instagram Business accounts. This redirects the user to Facebook's authorization page.
 
+**Supports both GET and POST methods.**
+
 ```http
-GET /api/v1/social-media/oauth/connect
-Authorization: ******
-X-Tenant-ID: <tenant_id>
+GET /api/v1/social-media/oauth/connect?access_token=<jwt_token>&frontend_callback=<url>
 ```
 
-**Query Parameters:**
+or
 
-| Parameter          | Type   | Description                                      |
-|-------------------|--------|--------------------------------------------------|
-| frontend_callback | string | URL to redirect to after OAuth completes         |
+```http
+POST /api/v1/social-media/oauth/connect
+Content-Type: application/json
+
+{
+  "access_token": "<jwt_token>",
+  "frontend_callback": "https://myapp.com/settings/social",
+  "tenant_id": "optional-tenant-uuid"
+}
+```
+
+**Authentication (checked in order):**
+
+| Source               | Example                             |
+| -------------------- | ----------------------------------- |
+| Authorization header | `Authorization: Bearer <jwt_token>` |
+| POST body            | `{"access_token": "<jwt_token>"}`   |
+| Query parameter      | `?access_token=<jwt_token>`         |
+
+**Parameters (query or POST body):**
+
+| Parameter         | Type   | Description                                       |
+| ----------------- | ------ | ------------------------------------------------- |
+| access_token      | string | JWT access token (if not in Authorization header) |
+| frontend_callback | string | URL to redirect to after OAuth completes          |
+| tenant_id         | string | Optional tenant ID (can also be in header/JWT)    |
 
 **Behavior:**
+
 1. Redirects user to Facebook OAuth dialog
 2. Requests permissions: `pages_show_list`, `pages_manage_posts`, `instagram_basic`, `instagram_content_publish`
 3. After user grants permission, redirects to callback endpoint
 4. Callback automatically creates configurations for all accessible Pages and Instagram accounts
 5. Redirects to `frontend_callback` URL with results
 
-**Example Flow:**
-```
-Frontend: window.location.href = '/api/v1/social-media/oauth/connect?frontend_callback=https://myapp.com/settings/social'
+**Example Flows:**
+
+Using query parameter (recommended for browser redirects):
+
+```javascript
+// Get the token from your auth context
+const token = getAccessToken();
+
+// Redirect to OAuth connect with token in query
+window.location.href =
+  "/api/v1/social-media/oauth/connect" +
+  "?access_token=" +
+  encodeURIComponent(token) +
+  "&frontend_callback=" +
+  encodeURIComponent(window.location.origin + "/settings/social");
 
 // After OAuth completes, user is redirected to:
-// https://myapp.com/settings/social?success=true&pages=2&instagram=1&created=3
-// OR on error:
-// https://myapp.com/settings/social?error=access_denied&message=User+denied+permission
+// /settings/social?success=true&pages=2&instagram=1&created=3
+```
+
+Using POST (for programmatic access):
+
+```javascript
+// First POST to get the redirect URL
+fetch("/api/v1/social-media/oauth/connect", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    access_token: token,
+    frontend_callback: window.location.origin + "/settings/social",
+  }),
+}).then((response) => {
+  // Handle redirect
+  window.location.href = response.url;
+});
 ```
 
 #### OAuth Callback
@@ -3458,27 +4150,27 @@ GET /api/v1/social-media/oauth/callback
 
 **Query Parameters (from Facebook):**
 
-| Parameter | Description                                |
-|----------|--------------------------------------------|
-| code     | Authorization code (on success)            |
-| error    | Error code (on failure)                    |
-| error_description | Error description                 |
+| Parameter         | Description                     |
+| ----------------- | ------------------------------- |
+| code              | Authorization code (on success) |
+| error             | Error code (on failure)         |
+| error_description | Error description               |
 
 **Redirect Query Parameters (to frontend_callback):**
 
 On success:
-| Parameter | Description                                |
+| Parameter | Description |
 |----------|--------------------------------------------|
-| success  | `true`                                     |
-| pages    | Number of Facebook Pages found             |
-| instagram| Number of Instagram accounts found         |
-| created  | Number of new configurations created       |
+| success | `true` |
+| pages | Number of Facebook Pages found |
+| instagram| Number of Instagram accounts found |
+| created | Number of new configurations created |
 
 On error:
-| Parameter | Description                                |
+| Parameter | Description |
 |----------|--------------------------------------------|
-| error    | Error type (e.g., `access_denied`, `meta_api_error`) |
-| message  | Human-readable error message               |
+| error | Error type (e.g., `access_denied`, `meta_api_error`) |
+| message | Human-readable error message |
 
 #### Check OAuth Status
 
@@ -3652,11 +4344,2200 @@ Content-Type: application/json
 
 The following environment variables are required for Meta API integration:
 
-| Variable         | Description                                      |
-|-----------------|--------------------------------------------------|
-| META_APP_ID     | Facebook/Meta App ID (can use FACEBOOK_APP_ID)   |
-| META_APP_SECRET | Facebook/Meta App Secret                         |
-| META_API_VERSION| Graph API version (default: v18.0)               |
+| Variable          | Description                                    |
+| ----------------- | ---------------------------------------------- |
+| META_APP_ID       | Facebook/Meta App ID (can use FACEBOOK_APP_ID) |
+| META_APP_SECRET   | Facebook/Meta App Secret                       |
+| META_API_VERSION  | Graph API version (default: v18.0)             |
+| META_OAUTH_SCOPES | OAuth scopes (comma-separated). See below.     |
+
+**OAuth Scopes Configuration:**
+
+The `META_OAUTH_SCOPES` variable controls which permissions are requested during OAuth.
+
+Default value (works in Development mode for app admins/testers):
+
+```
+public_profile,pages_show_list,pages_manage_posts
+```
+
+Full scopes for production (requires Meta App Review):
+
+```
+public_profile,pages_show_list,pages_manage_posts,pages_read_engagement,instagram_content_publish,instagram_manage_insights,business_management
+```
+
+**Important Notes:**
+
+- The `email` scope is not needed (user email is included with `public_profile`)
+- The `instagram_basic` scope is deprecated - use `instagram_manage_insights` instead
+- In Development mode, only app admins, developers, and testers can use advanced permissions
+- For regular users, your app must pass [Meta App Review](https://developers.facebook.com/docs/app-review)
+- If you see "Invalid Scopes" errors, verify you're using the correct scope names from the [Facebook Login Permissions documentation](https://developers.facebook.com/docs/facebook-login/permissions)
+
+---
+
+## Subscription Endpoints
+
+PopArticle uses Paddle for subscription-based billing. Subscriptions are **user/owner-based**, meaning a single subscription applies across all tenants owned by that user. This approach reduces friction and aligns with modern SaaS pricing standards.
+
+All subscription endpoints require `Authorization: Bearer <token>`. No `X-Tenant-ID` header is needed for subscription management.
+
+### Get Subscription Status
+
+```http
+GET /api/v1/subscriptions/status
+Authorization: Bearer <access_token>
+```
+
+Response (200):
+
+```json
+{
+  "has_subscription": true,
+  "subscription_id": 1,
+  "paddle_subscription_id": "sub_xxx",
+  "plan": "pro",
+  "status": "active",
+  "article_limit": 500,
+  "articles_used": 45,
+  "articles_remaining": 455,
+  "ai_credit_limit": 200,
+  "ai_credits_used": 12,
+  "ai_credits_remaining": 188,
+  "allowed_models": ["gpt-4o-mini", "gpt-4o", "gpt-4.5-preview"],
+  "has_api_access": true,
+  "has_invitation_access": true,
+  "billing_cycle": { "interval": "month", "frequency": 1 },
+  "current_period": {
+    "start": "2024-01-01T00:00:00Z",
+    "end": "2024-02-01T00:00:00Z"
+  },
+  "pricing": {
+    "amount": "49.00",
+    "currency": "USD"
+  },
+  "billing_email": "billing@example.com",
+  "canceled_at": null,
+  "paused_at": null,
+  "created_at": "2024-01-01T00:00:00Z"
+}
+```
+
+Response when on free tier (no subscription):
+
+```json
+{
+  "has_subscription": false,
+  "plan": "free",
+  "status": "active",
+  "article_limit": 10,
+  "articles_used": 0,
+  "articles_remaining": 10,
+  "ai_credit_limit": 10,
+  "ai_credits_used": 0,
+  "ai_credits_remaining": 10,
+  "allowed_models": ["gpt-4o-mini"],
+  "has_api_access": false,
+  "has_invitation_access": false,
+  "message": "You are on the free plan"
+}
+```
+
+### Get Available Plans
+
+```http
+GET /api/v1/subscriptions/plans
+```
+
+Response (200):
+
+```json
+{
+  "plans": [
+    {
+      "name": "free",
+      "display_name": "Free",
+      "price": "0",
+      "currency": "USD",
+      "billing_cycle": null,
+      "article_limit": 10,
+      "ai_credit_limit": 10,
+      "allowed_models": ["gpt-4o-mini"],
+      "has_api_access": false,
+      "has_invitation_access": false,
+      "features": [
+        "Up to 10 articles per month",
+        "Up to 10 AI-generated articles per month",
+        "Basic AI model only (gpt-4o-mini)",
+        "Unlimited tenants",
+        "No team members",
+        "No API access",
+        "Community support"
+      ]
+    },
+    {
+      "name": "basic",
+      "display_name": "Basic",
+      "price": "19",
+      "currency": "USD",
+      "billing_cycle": "month",
+      "article_limit": 100,
+      "ai_credit_limit": 50,
+      "allowed_models": ["gpt-4o-mini", "gpt-4o"],
+      "has_api_access": false,
+      "has_invitation_access": true,
+      "price_id": "pri_xxx",
+      "features": [
+        "Up to 100 articles per month",
+        "Up to 50 AI-generated articles per month",
+        "Access to gpt-4o-mini and gpt-4o models",
+        "Team member invitations",
+        "No API access",
+        "Advanced support",
+        "SEO optimization"
+      ]
+    },
+    {
+      "name": "pro",
+      "display_name": "Pro",
+      "price": "49",
+      "currency": "USD",
+      "billing_cycle": "month",
+      "article_limit": 500,
+      "ai_credit_limit": 200,
+      "allowed_models": ["gpt-4o-mini", "gpt-4o", "gpt-4.5-preview"],
+      "has_api_access": true,
+      "has_invitation_access": true,
+      "price_id": "pri_xxx",
+      "features": [
+        "Up to 500 articles per month",
+        "Up to 200 AI-generated articles per month",
+        "Access to advanced AI models including gpt-4.5-preview",
+        "Team member invitations",
+        "API access",
+        "Advanced support",
+        "Advanced SEO & analytics"
+      ]
+    },
+    {
+      "name": "enterprise",
+      "display_name": "Enterprise",
+      "price": "199",
+      "currency": "USD",
+      "billing_cycle": "month",
+      "article_limit": 1500,
+      "ai_credit_limit": 1000,
+      "allowed_models": [
+        "gpt-4o-mini",
+        "gpt-4o",
+        "gpt-4.5-preview",
+        "o1",
+        "o3-mini"
+      ],
+      "has_api_access": true,
+      "has_invitation_access": true,
+      "price_id": "pri_xxx",
+      "features": [
+        "Up to 1500 articles per month",
+        "Up to 1000 AI-generated articles per month",
+        "Access to all AI models including o1 and o3-mini",
+        "Team member invitations",
+        "API access",
+        "Advanced support",
+        "White-label solution",
+        "Custom integrations"
+      ]
+    }
+  ],
+  "is_paddle_configured": true
+}
+```
+
+### Get Checkout Settings (for Frontend paddle.js)
+
+Returns checkout settings for the frontend to use with `Paddle.Checkout.open()`.
+This endpoint does NOT create a checkout URL - the frontend uses paddle.js with a client token to display the checkout overlay.
+
+```http
+POST /api/v1/subscriptions/checkout
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+Request Body:
+
+```json
+{
+  "plan": "pro",
+  "billing_email": "billing@example.com" // Optional, defaults to user email
+}
+```
+
+Response (200):
+
+```json
+{
+  "checkout_settings": {
+    "items": [{ "priceId": "pri_xxx", "quantity": 1 }],
+    "customData": { "user_id": "123" },
+    "customer": { "email": "user@example.com" },
+    "settings": {
+      "displayMode": "overlay",
+      "theme": "light",
+      "locale": "en",
+      "allowLogout": true
+    }
+  },
+  "plan": "pro",
+  "price_id": "pri_xxx",
+  "message": "Use these settings with Paddle.Checkout.open() on the frontend"
+}
+```
+
+Frontend usage:
+
+```javascript
+// After fetching checkout settings
+window.Paddle.Checkout.open({
+  items: data.checkout_settings.items,
+  customData: data.checkout_settings.customData,
+  customer: data.checkout_settings.customer,
+  settings: data.checkout_settings.settings,
+});
+```
+
+Error Response (409 - Already subscribed):
+
+```json
+{
+  "error": "You already have an active subscription. Use upgrade endpoint to change plans.",
+  "current_plan": "basic"
+}
+```
+
+### Cancel Subscription
+
+```http
+POST /api/v1/subscriptions/cancel
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+Request Body:
+
+```json
+{
+  "effective_from": "next_billing_period"
+}
+```
+
+Response (200):
+
+```json
+{
+  "message": "Subscription cancellation initiated",
+  "effective_from": "next_billing_period",
+  "plan_after_cancellation": "free"
+}
+```
+
+### Upgrade / Downgrade Subscription
+
+```http
+POST /api/v1/subscriptions/upgrade
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+Request Body:
+
+```json
+{
+  "plan": "enterprise",
+  "proration": "prorated_immediately"
+}
+```
+
+Response (200):
+
+```json
+{
+  "message": "Subscription upgraded successfully",
+  "old_plan": "pro",
+  "new_plan": "enterprise",
+  "new_article_limit": 1500,
+  "new_ai_credit_limit": 1000
+}
+```
+
+### Pause Subscription
+
+```http
+POST /api/v1/subscriptions/pause
+Authorization: Bearer <access_token>
+```
+
+Response (200):
+
+```json
+{
+  "message": "Subscription pause initiated",
+  "status": "paused"
+}
+```
+
+### Resume Subscription
+
+```http
+POST /api/v1/subscriptions/resume
+Authorization: Bearer <access_token>
+```
+
+Response (200):
+
+```json
+{
+  "message": "Subscription resumed",
+  "status": "active"
+}
+```
+
+### Get Subscription History
+
+```http
+GET /api/v1/subscriptions/history
+Authorization: Bearer <access_token>
+```
+
+Response (200):
+
+```json
+{
+  "subscription_id": 1,
+  "events": [
+    {
+      "id": 1,
+      "event_type": "subscription.created",
+      "occurred_at": "2024-01-01T00:00:00Z",
+      "created_at": "2024-01-01T00:00:00Z",
+      "processed": true
+    },
+    {
+      "id": 2,
+      "event_type": "subscription.updated",
+      "occurred_at": "2024-02-01T00:00:00Z",
+      "created_at": "2024-02-01T00:00:00Z",
+      "processed": true
+    }
+  ]
+}
+```
+
+### Subscription Plans & Monthly Limits
+
+| Plan       | Monthly Article Limit | Monthly AI Credits | Allowed AI Models                                 | Team Invitations | API Access | Price/Month |
+| ---------- | --------------------- | ------------------ | ------------------------------------------------- | ---------------- | ---------- | ----------- |
+| Free       | 10                    | 10                 | gpt-4o-mini                                       | ❌               | ❌         | $0          |
+| Basic      | 100                   | 50                 | gpt-4o-mini, gpt-4o                               | ✅               | ❌         | $19         |
+| Pro        | 500                   | 200                | gpt-4o-mini, gpt-4o, gpt-4.5-preview              | ✅               | ✅         | $49         |
+| Enterprise | 1500                  | 1000               | gpt-4o-mini, gpt-4o, gpt-4.5-preview, o1, o3-mini | ✅               | ✅         | $199        |
+
+**Note:** Super admins bypass all subscription limits and restrictions.
+
+### AI Credit System
+
+AI credits control usage of AI-powered article generation (the `POST /api/v1/articles/generate` endpoint). Each plan includes a monthly AI credit allowance that resets at the start of each billing period.
+
+**How credits are calculated:**
+
+- **1 AI credit = 1 AI-generated article.** Each successful call to `POST /api/v1/articles/generate` consumes exactly 1 AI credit, regardless of article length, model used, or whether image generation is enabled.
+- Manually created articles (`POST /api/v1/articles`) do **not** consume AI credits — they only count toward the monthly article limit.
+- Both article limits and AI credit limits are tracked independently:
+  - **Article limit**: Counts all articles (manual + AI-generated)
+  - **AI credit limit**: Counts only AI-generated articles
+
+**AI model restrictions per plan:**
+
+- Free plan users can only use `gpt-4o-mini` (the lowest-cost model)
+- Higher-tier plans unlock access to more powerful (and more expensive) models
+- If a user requests a model not available on their plan, the API returns 403 with the list of allowed models
+- When no `model` is specified in the request, the system default model is used (the request is allowed regardless of plan)
+
+**Enforcement behavior:**
+
+- When article limit is reached → 403 with `"error": "Monthly article limit reached"`
+- When AI credit limit is reached → 403 with `"error": "Monthly AI credit limit reached"`
+- When requesting a restricted model → 403 with `"error": "Your {plan} plan does not allow the \"{model}\" model"` and the `allowed_models` list
+- All 403 responses include `upgrade_url` pointing to `/api/v1/subscriptions/plans`
+
+### Feature Gating
+
+Beyond usage limits, certain features are restricted by plan:
+
+- **Team member invitations** (`POST /api/v1/tenants/<id>/invitations`): Requires Basic plan or higher. Free users receive 403.
+- **API key access**: Requires Pro plan or higher. Free and Basic users cannot use API keys for programmatic access.
+
+---
+
+## Paddle Webhooks
+
+Webhook Endpoint (public, verifies signature):
+
+```http
+POST /api/v1/webhooks/paddle
+Content-Type: application/json
+```
+
+Security:
+
+- Paddle sends a `Paddle-Signature` header with format: `ts=timestamp;h1=signature`.
+- Verify using the `PADDLE_WEBHOOK_SECRET` and the raw request body before processing.
+
+Handled Events:
+
+- `subscription.created` - New subscription started
+- `subscription.updated` - Subscription plan or details changed
+- `subscription.canceled` - Subscription was canceled
+- `subscription.paused` - Subscription was paused
+- `subscription.resumed` - Subscription was resumed
+- `subscription.past_due` - Payment failed, subscription past due
+- `transaction.completed` - Payment was successful
+
+Notes:
+
+- Include `user_id` in `custom_data` when creating checkout sessions to link Paddle subscriptions to users.
+- Webhooks are used to create/update the local `subscriptions` record and adjust `monthly_article_limit` and `monthly_ai_credit_limit` accordingly.
+- Do not log sensitive payment information. Persist events to `subscription_events` for auditing and retries.
+
+### Environment Variables
+
+Configure these environment variables (see `PADDLE_INTEGRATION.md`):
+
+- `PADDLE_API_KEY` - Paddle API key
+- `PADDLE_WEBHOOK_SECRET` - Webhook verification secret
+- `PADDLE_ENVIRONMENT` - `sandbox` or `production`
+- `PADDLE_PRICE_ID_BASIC`, `PADDLE_PRICE_ID_PRO`, `PADDLE_PRICE_ID_ENTERPRISE` - Price IDs from Paddle
+
+### Testing
+
+- Use `PADDLE_ENVIRONMENT=sandbox` locally.
+- Expose local server via `ngrok` for webhook testing.
+- Sandbox test card numbers: success `4242 4242 4242 4242`, decline `4000 0000 0000 0002`.
+
+---
+
+## Affiliate Link Management
+
+Centralized affiliate link management allows users to create, update, and track affiliate links across multiple tenant websites. Links are **user-owned** (not tenant-scoped), so the same affiliate link can be referenced in articles across different tenants.
+
+**Key Concepts:**
+
+- Each affiliate link gets a unique SEO-friendly **slug** (e.g., `wireless-headphones`)
+- Articles reference the **callback link** (`/go/{slug}?tenant_id=xyz`) instead of the raw affiliate URL
+- Updating the affiliate link destination propagates to all articles automatically
+- Click tracking records tenant_id, IP, user-agent, and referer per click
+
+### List Affiliate Links
+
+```http
+GET /api/v1/affiliate-links/
+Authorization: Bearer <access_token>
+```
+
+**Query Parameters:**
+
+- `status` (optional): Filter by status (`active` or `inactive`)
+- `limit` (optional): Maximum number of results (default: 50, max: 200)
+- `offset` (optional): Pagination offset (default: 0)
+- `include_clicks` (optional): Include click counts per link (default: false)
+
+**Response (200):**
+
+```json
+{
+  "affiliate_links": [
+    {
+      "id": 1,
+      "user_id": 5,
+      "product_name": "Wireless Headphones",
+      "affiliate_service": "Amazon",
+      "affiliate_link": "https://www.amazon.com/dp/B09XYZ?tag=myref-20",
+      "slug": "wireless-headphones",
+      "callback_link": "/go/wireless-headphones",
+      "image_url": "https://images.amazon.com/headphones.jpg",
+      "status": "active",
+      "notes": "Great noise cancelling headphones",
+      "price": "79.99",
+      "currency": "USD",
+      "product_url": "https://www.amazon.com/dp/B09XYZ",
+      "tags": ["electronics", "audio", "headphones"],
+      "created_at": "2026-03-12T10:00:00.000000",
+      "updated_at": "2026-03-12T10:00:00.000000",
+      "click_count": 42
+    }
+  ],
+  "total_count": 1,
+  "limit": 50,
+  "offset": 0
+}
+```
+
+> **Note:** `click_count` is only included when `include_clicks=true`.
+
+### Create Affiliate Link
+
+```http
+POST /api/v1/affiliate-links/
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "product_name": "Wireless Headphones",
+  "affiliate_link": "https://www.amazon.com/dp/B09XYZ?tag=myref-20",
+  "affiliate_service": "Amazon",
+  "image_url": "https://images.amazon.com/headphones.jpg",
+  "notes": "Great noise cancelling headphones",
+  "price": "79.99",
+  "currency": "USD",
+  "product_url": "https://www.amazon.com/dp/B09XYZ",
+  "tags": ["electronics", "audio", "headphones"]
+}
+```
+
+| Field             | Type     | Required | Description                                             |
+| ----------------- | -------- | -------- | ------------------------------------------------------- |
+| product_name      | string   | Yes      | Name of the product                                     |
+| affiliate_link    | string   | Yes\*    | Destination affiliate URL (\*or provide `html_snippet`) |
+| affiliate_service | string   | No       | Service name (e.g., Amazon, AliExpress)                 |
+| image_url         | string   | No       | Product image URL                                       |
+| notes             | string   | No       | Free-form notes                                         |
+| price             | string   | No       | Product price                                           |
+| currency          | string   | No       | Currency code (e.g., USD, EUR)                          |
+| product_url       | string   | No       | Non-affiliate product URL                               |
+| tags              | string[] | No       | Array of tag strings                                    |
+| html_snippet      | string   | No       | HTML snippet to parse for affiliate_link and image_url  |
+
+**Request Body (with HTML Snippet):**
+
+```json
+{
+  "product_name": "AliExpress Gadget",
+  "affiliate_service": "AliExpress",
+  "html_snippet": "<a href=\"https://s.click.aliexpress.com/e/_c4E8uVxZ\" target=\"_blank\"><img src=\"//ae01.alicdn.com/kf/S27b4dd97.jpg_80x80.jpg\" /></a>"
+}
+```
+
+When `html_snippet` is provided, the system extracts the affiliate link from the `<a href>` and the image URL from the `<img src>`. Protocol-relative URLs (`//`) are normalized to `https:`. Explicit `affiliate_link` and `image_url` values take precedence over parsed values.
+
+**Response (201):**
+
+```json
+{
+  "message": "Affiliate link created successfully",
+  "affiliate_link": {
+    "id": 1,
+    "user_id": 5,
+    "product_name": "Wireless Headphones",
+    "affiliate_service": "Amazon",
+    "affiliate_link": "https://www.amazon.com/dp/B09XYZ?tag=myref-20",
+    "slug": "wireless-headphones",
+    "callback_link": "/go/wireless-headphones",
+    "image_url": "https://images.amazon.com/headphones.jpg",
+    "status": "active",
+    "notes": "Great noise cancelling headphones",
+    "price": "79.99",
+    "currency": "USD",
+    "product_url": "https://www.amazon.com/dp/B09XYZ",
+    "tags": ["electronics", "audio", "headphones"],
+    "created_at": "2026-03-12T10:00:00.000000",
+    "updated_at": "2026-03-12T10:00:00.000000"
+  }
+}
+```
+
+**Error Responses:**
+
+**400 Bad Request:**
+
+```json
+{
+  "error": "product_name is required"
+}
+```
+
+```json
+{
+  "error": "affiliate_link is required (or provide html_snippet)"
+}
+```
+
+### Get Affiliate Link
+
+```http
+GET /api/v1/affiliate-links/<link_id>
+Authorization: Bearer <access_token>
+```
+
+**Query Parameters:**
+
+- `include_clicks` (optional): Include click count (default: false)
+
+**Response (200):**
+
+```json
+{
+  "affiliate_link": {
+    "id": 1,
+    "user_id": 5,
+    "product_name": "Wireless Headphones",
+    "affiliate_service": "Amazon",
+    "affiliate_link": "https://www.amazon.com/dp/B09XYZ?tag=myref-20",
+    "slug": "wireless-headphones",
+    "callback_link": "/go/wireless-headphones",
+    "image_url": "https://images.amazon.com/headphones.jpg",
+    "status": "active",
+    "notes": "Great noise cancelling headphones",
+    "price": "79.99",
+    "currency": "USD",
+    "product_url": "https://www.amazon.com/dp/B09XYZ",
+    "tags": ["electronics", "audio", "headphones"],
+    "created_at": "2026-03-12T10:00:00.000000",
+    "updated_at": "2026-03-12T10:00:00.000000",
+    "click_count": 42
+  }
+}
+```
+
+**Error Responses:**
+
+**404 Not Found:**
+
+```json
+{
+  "error": "Affiliate link not found"
+}
+```
+
+> Only the owner can view their affiliate links. Requests for another user's link return 404.
+
+### Update Affiliate Link
+
+```http
+PUT /api/v1/affiliate-links/<link_id>
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+**Request Body (all fields optional):**
+
+```json
+{
+  "product_name": "Updated Headphones",
+  "affiliate_link": "https://www.amazon.com/dp/B09NEW?tag=myref-20",
+  "affiliate_service": "AliExpress",
+  "image_url": "https://images.amazon.com/new-headphones.jpg",
+  "status": "inactive",
+  "notes": "Updated notes",
+  "price": "59.99",
+  "currency": "EUR",
+  "product_url": "https://www.amazon.com/dp/B09NEW",
+  "tags": ["updated-tag"],
+  "html_snippet": "<a href='...'><img src='...' /></a>"
+}
+```
+
+Updating `affiliate_link` automatically propagates to all articles that use this link's callback slug.
+
+**Response (200):**
+
+```json
+{
+  "message": "Affiliate link updated successfully",
+  "affiliate_link": {
+    "id": 1,
+    "user_id": 5,
+    "product_name": "Updated Headphones",
+    "affiliate_service": "AliExpress",
+    "affiliate_link": "https://www.amazon.com/dp/B09NEW?tag=myref-20",
+    "slug": "wireless-headphones",
+    "callback_link": "/go/wireless-headphones",
+    "image_url": "https://images.amazon.com/new-headphones.jpg",
+    "status": "inactive",
+    "notes": "Updated notes",
+    "price": "59.99",
+    "currency": "EUR",
+    "product_url": "https://www.amazon.com/dp/B09NEW",
+    "tags": ["updated-tag"],
+    "created_at": "2026-03-12T10:00:00.000000",
+    "updated_at": "2026-03-12T15:30:00.000000"
+  }
+}
+```
+
+**Error Responses:**
+
+**400 Bad Request:**
+
+```json
+{
+  "error": "status must be \"active\" or \"inactive\""
+}
+```
+
+**403 Forbidden:**
+
+```json
+{
+  "error": "You can only update your own affiliate links"
+}
+```
+
+**404 Not Found:**
+
+```json
+{
+  "error": "Affiliate link not found"
+}
+```
+
+### Delete Affiliate Link
+
+```http
+DELETE /api/v1/affiliate-links/<link_id>
+Authorization: Bearer <access_token>
+```
+
+Deletes the affiliate link and all associated click tracking data.
+
+**Response (200):**
+
+```json
+{
+  "message": "Affiliate link deleted successfully"
+}
+```
+
+**Error Responses:**
+
+**403 Forbidden:**
+
+```json
+{
+  "error": "You can only delete your own affiliate links"
+}
+```
+
+**404 Not Found:**
+
+```json
+{
+  "error": "Affiliate link not found"
+}
+```
+
+### Get Click Analytics
+
+```http
+GET /api/v1/affiliate-links/<link_id>/clicks
+Authorization: Bearer <access_token>
+```
+
+**Query Parameters:**
+
+- `tenant_id` (optional): Filter clicks by tenant UUID
+
+**Response (200):**
+
+```json
+{
+  "affiliate_link_id": 1,
+  "slug": "wireless-headphones",
+  "click_count": 42,
+  "tenant_id": null
+}
+```
+
+**Response (200, filtered by tenant):**
+
+```json
+{
+  "affiliate_link_id": 1,
+  "slug": "wireless-headphones",
+  "click_count": 15,
+  "tenant_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+**Error Responses:**
+
+**404 Not Found:**
+
+```json
+{
+  "error": "Affiliate link not found"
+}
+```
+
+### Parse HTML Snippet
+
+```http
+POST /api/v1/affiliate-links/parse-html
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+Parses an HTML snippet and extracts the affiliate link and image URL without creating a record.
+
+**Request Body:**
+
+```json
+{
+  "html_snippet": "<a href=\"https://s.click.aliexpress.com/e/_c4E8uVxZ\" target=\"_blank\"><img src=\"//ae01.alicdn.com/kf/S27b4dd97.jpg_80x80.jpg\" /></a>"
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "parsed": {
+    "affiliate_link": "https://s.click.aliexpress.com/e/_c4E8uVxZ",
+    "image_url": "https://ae01.alicdn.com/kf/S27b4dd97.jpg_80x80.jpg"
+  }
+}
+```
+
+**Image-only snippet:**
+
+```json
+{
+  "html_snippet": "<img src=\"https://images.example.com/product.jpg\" />"
+}
+```
+
+```json
+{
+  "parsed": {
+    "affiliate_link": null,
+    "image_url": "https://images.example.com/product.jpg"
+  }
+}
+```
+
+**Error Responses:**
+
+**400 Bad Request:**
+
+```json
+{
+  "error": "html_snippet is required"
+}
+```
+
+### Affiliate Link Redirect
+
+```http
+GET /go/<slug>?tenant_id=<tenant_id>
+```
+
+Public endpoint (no authentication required). Logs the click and redirects (302) to the affiliate link destination.
+
+**URL Parameters:**
+
+- `slug` (required): The affiliate link's unique slug
+
+**Query Parameters:**
+
+- `tenant_id` (optional): Tenant UUID for tracking which website the click came from
+
+**Usage in Articles:**
+
+```html
+<a
+  href="https://yourdomain.com/go/wireless-headphones?tenant_id=550e8400-e29b-41d4-a716-446655440000"
+>
+  Buy Wireless Headphones
+</a>
+```
+
+**Response (302):** Redirects to the affiliate link destination URL.
+
+**Click Tracking:** Each redirect logs:
+
+- `affiliate_link_id`: Which link was clicked
+- `tenant_id`: Which tenant website the click came from
+- `ip_address`: Client IP address
+- `user_agent`: Client user agent string
+- `referer`: HTTP Referer header
+- `clicked_at`: Timestamp
+
+**Error Responses:**
+
+**404 Not Found:**
+
+```json
+{
+  "error": "Link not found or inactive"
+}
+```
+
+---
+
+## System Administration (Global Admin)
+
+System-level administration endpoints for platform-wide oversight and management. These routes are accessible **only** by global admins — users with `is_super_admin=True` and `tenant_id=None`.
+
+**Key Concepts:**
+
+- **Global Admin Role** — Exists independently of any tenant. Represents the top-most permission level in the system hierarchy.
+- **Cross-Tenant Access** — Full visibility into all tenants, users, and data system-wide.
+- **Audit Logging** — Every admin action is recorded in the `admin_audit_logs` table with actor, action, resource, IP address, and user agent.
+- All endpoints require `Authorization: Bearer <access_token>` from a global admin user.
+- Non-admin users receive a `403 Forbidden` response.
+
+**Authentication:**
+
+```http
+Authorization: Bearer <global_admin_access_token>
+```
+
+> **Note:** No `X-Tenant-ID` header is required. Admin routes operate outside tenant context.
+
+### Admin Dashboard
+
+```http
+GET /api/v1/admin/dashboard
+Authorization: Bearer <access_token>
+```
+
+Returns aggregate system-wide statistics across all tenants.
+
+**Response (200):**
+
+```json
+{
+  "users": {
+    "total": 150,
+    "active": 142,
+    "inactive": 8
+  },
+  "tenants": {
+    "total": 12,
+    "active": 10,
+    "suspended": 2
+  },
+  "articles": {
+    "total": 1250,
+    "published": 980
+  },
+  "categories": {
+    "total": 45
+  },
+  "global_admins": 2
+}
+```
+
+---
+
+### Platform Insights
+
+```http
+GET /api/v1/admin/dashboard/insights
+Authorization: Bearer <access_token>
+```
+
+Returns comprehensive platform insights combining subscription analytics, content metrics, social media performance, user activity trends, system health, and per-tenant health scores. Designed to support admin decision making with actionable summaries rather than raw data.
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description                        |
+| --------- | ---- | ------- | ---------------------------------- |
+| days      | int  | 30      | Lookback period in days (max: 365) |
+
+**Response (200):**
+
+```json
+{
+  "period_days": 30,
+  "generated_at": "2026-03-20T08:00:00.000000",
+  "subscriptions": {
+    "total_active": 85,
+    "plan_distribution": {
+      "free": 40,
+      "basic": 25,
+      "pro": 15,
+      "enterprise": 5
+    },
+    "status_distribution": {
+      "active": 85,
+      "canceled": 12,
+      "past_due": 3,
+      "paused": 2,
+      "trialing": 5
+    },
+    "estimated_mrr": {
+      "USD": 2450.0
+    },
+    "billing_cycles": {
+      "month": 60,
+      "year": 25
+    },
+    "new_subscriptions": 8,
+    "recent_cancellations": 3,
+    "churn_rate": 3.5,
+    "usage": {
+      "avg_article_limit_utilization_pct": 62.3,
+      "users_at_article_limit": 7
+    }
+  },
+  "content": {
+    "articles_created_in_period": 320,
+    "articles_published_in_period": 280,
+    "status_distribution": {
+      "draft": 150,
+      "published": 980,
+      "archived": 120
+    },
+    "total_views": 45000,
+    "featured_articles": 12,
+    "top_articles": [
+      {
+        "id": 42,
+        "title": "Getting Started with AI",
+        "views": 5200,
+        "status": "published",
+        "tenant_id": "550e8400-e29b-41d4-a716-446655440000"
+      }
+    ],
+    "generation": {
+      "total_attempts": 150,
+      "successful": 142,
+      "failed": 8,
+      "success_rate": 94.7,
+      "avg_generation_time_ms": 12500
+    },
+    "active_scheduling_configs": 18
+  },
+  "social_media": {
+    "total_posts_in_period": 95,
+    "successful_posts": 88,
+    "success_rate": 92.6,
+    "status_distribution": {
+      "success": 88,
+      "failed": 5,
+      "scheduled": 2
+    },
+    "platform_distribution": {
+      "facebook_page": 45,
+      "instagram": 30,
+      "facebook": 20
+    },
+    "active_connected_accounts": 15,
+    "ai_generated_posts": 72,
+    "manually_edited_posts": 23,
+    "pending_scheduled_posts": 2
+  },
+  "user_activity": {
+    "new_registrations": 25,
+    "active_logins_in_period": 110,
+    "total_users": 150,
+    "login_rate": 73.3,
+    "growth_rate_vs_previous_period": 12.5,
+    "authentication": {
+      "password_users": 90,
+      "oauth_users": 60,
+      "oauth_providers": {
+        "google": 45,
+        "github": 15
+      }
+    },
+    "verified_users": 130,
+    "dormant_users_90d": 20
+  },
+  "system_health": {
+    "total_api_requests": 125000,
+    "error_requests": 1250,
+    "server_errors": 15,
+    "error_rate": 1.0,
+    "avg_response_time_ms": 180,
+    "p95_response_time_ms": 450,
+    "status_code_distribution": {
+      "200": 110000,
+      "201": 5000,
+      "400": 800,
+      "401": 350,
+      "404": 85,
+      "500": 15
+    },
+    "top_endpoints": [
+      {
+        "endpoint": "/api/v1/articles",
+        "method": "GET",
+        "request_count": 25000,
+        "avg_response_time_ms": 95
+      }
+    ]
+  },
+  "tenant_health": {
+    "total_active_tenants": 10,
+    "avg_health_score": 72.5,
+    "tenants": [
+      {
+        "id": "550e8400-e29b-41d4-a716-446655440000",
+        "name": "Tech Blog",
+        "health_score": 100,
+        "users": 5,
+        "total_articles": 120,
+        "recent_articles": 15,
+        "published_articles": 95,
+        "total_views": 12000,
+        "social_posts_in_period": 8,
+        "created_at": "2025-06-01T10:00:00.000000"
+      }
+    ]
+  }
+}
+```
+
+> **Note:** Tenant health scores (0–100) are computed from user presence (25pts), article count (20pts), recent activity (25pts), published content (15pts), and social media activity (15pts).
+
+---
+
+### Content Analytics
+
+```http
+GET /api/v1/admin/dashboard/content
+Authorization: Bearer <access_token>
+```
+
+Returns detailed content and article generation analytics, including affiliate link performance data.
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description                        |
+| --------- | ---- | ------- | ---------------------------------- |
+| days      | int  | 30      | Lookback period in days (max: 365) |
+
+**Response (200):**
+
+```json
+{
+  "period_days": 30,
+  "generated_at": "2026-03-20T08:00:00.000000",
+  "content": {
+    "articles_created_in_period": 320,
+    "articles_published_in_period": 280,
+    "status_distribution": {
+      "draft": 150,
+      "published": 980,
+      "archived": 120
+    },
+    "total_views": 45000,
+    "featured_articles": 12,
+    "top_articles": [],
+    "generation": {
+      "total_attempts": 150,
+      "successful": 142,
+      "failed": 8,
+      "success_rate": 94.7,
+      "avg_generation_time_ms": 12500
+    },
+    "active_scheduling_configs": 18,
+    "affiliate_links": {
+      "total_links": 25,
+      "active_links": 20,
+      "clicks_in_period": 340,
+      "top_links": [
+        {
+          "id": 1,
+          "product_name": "Wireless Headphones",
+          "slug": "wireless-headphones",
+          "service": "Amazon",
+          "clicks": 85
+        }
+      ]
+    }
+  }
+}
+```
+
+---
+
+### Revenue Analytics
+
+```http
+GET /api/v1/admin/dashboard/revenue
+Authorization: Bearer <access_token>
+```
+
+Returns detailed subscription and revenue analytics to support financial decision making. Includes MRR estimates, conversion rates, churn indicators, and subscription health metrics.
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description                        |
+| --------- | ---- | ------- | ---------------------------------- |
+| days      | int  | 30      | Lookback period in days (max: 365) |
+
+**Response (200):**
+
+```json
+{
+  "period_days": 30,
+  "generated_at": "2026-03-20T08:00:00.000000",
+  "revenue": {
+    "total_active": 85,
+    "plan_distribution": {
+      "free": 40,
+      "basic": 25,
+      "pro": 15,
+      "enterprise": 5
+    },
+    "status_distribution": {
+      "active": 85,
+      "canceled": 12,
+      "past_due": 3
+    },
+    "estimated_mrr": {
+      "USD": 2450.0
+    },
+    "billing_cycles": {
+      "month": 60,
+      "year": 25
+    },
+    "new_subscriptions": 8,
+    "recent_cancellations": 3,
+    "churn_rate": 3.5,
+    "usage": {
+      "avg_article_limit_utilization_pct": 62.3,
+      "users_at_article_limit": 7
+    },
+    "users_without_subscription": 65,
+    "conversion_rate": 56.7,
+    "active_trials": 5,
+    "expiring_within_7_days": 3,
+    "past_due_subscriptions": 3
+  }
+}
+```
+
+---
+
+### Admin Tenant Management
+
+#### List All Tenants
+
+```http
+GET /api/v1/admin/tenants
+Authorization: Bearer <access_token>
+```
+
+**Query Parameters:**
+
+| Parameter | Type    | Default | Description                                     |
+| --------- | ------- | ------- | ----------------------------------------------- |
+| page      | int     | 1       | Page number                                     |
+| per_page  | int     | 20      | Results per page (max: 100)                     |
+| search    | string  | —       | Search by name, slug, or domain                 |
+| is_active | boolean | —       | Filter by active (`true`) / suspended (`false`) |
+
+**Response (200):**
+
+```json
+{
+  "tenants": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "name": "Tech Blog",
+      "slug": "tech-blog",
+      "primary_domain": "blog.techcompany.com",
+      "is_active": true,
+      "is_verified": true,
+      "user_count": 5,
+      "article_count": 120,
+      "created_at": "2025-06-01T10:00:00.000000",
+      "suspended_at": null
+    }
+  ],
+  "total": 12,
+  "page": 1,
+  "per_page": 20,
+  "pages": 1
+}
+```
+
+#### Suspend Tenant
+
+```http
+POST /api/v1/admin/tenants/<tenant_id>/suspend
+Authorization: Bearer <access_token>
+```
+
+Suspends a tenant, preventing access to their resources. Sets `is_active=false` and records the suspension timestamp.
+
+**Response (200):**
+
+```json
+{
+  "message": "Tenant suspended successfully",
+  "tenant": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Tech Blog",
+    "is_active": false,
+    "suspended_at": "2026-03-19T12:00:00.000000"
+  }
+}
+```
+
+**Error (404):**
+
+```json
+{
+  "error": "Tenant not found"
+}
+```
+
+#### Activate Tenant
+
+```http
+POST /api/v1/admin/tenants/<tenant_id>/activate
+Authorization: Bearer <access_token>
+```
+
+Activates a previously suspended tenant. Clears the suspension timestamp.
+
+**Response (200):**
+
+```json
+{
+  "message": "Tenant activated successfully",
+  "tenant": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Tech Blog",
+    "is_active": true
+  }
+}
+```
+
+#### Delete Tenant
+
+```http
+DELETE /api/v1/admin/tenants/<tenant_id>
+Authorization: Bearer <access_token>
+```
+
+Permanently deletes a tenant and all associated data (users, articles, categories, etc.).
+
+**Response (200):**
+
+```json
+{
+  "message": "Tenant deleted successfully"
+}
+```
+
+**Error (404):**
+
+```json
+{
+  "error": "Tenant not found"
+}
+```
+
+---
+
+### Admin User Management
+
+#### List All Users
+
+```http
+GET /api/v1/admin/users
+Authorization: Bearer <access_token>
+```
+
+Lists all users across the platform with cross-tenant visibility.
+
+**Query Parameters:**
+
+| Parameter | Type    | Default | Description                                    |
+| --------- | ------- | ------- | ---------------------------------------------- |
+| page      | int     | 1       | Page number                                    |
+| per_page  | int     | 20      | Results per page (max: 100)                    |
+| search    | string  | —       | Search by email, username, or full name        |
+| is_active | boolean | —       | Filter by active (`true`) / inactive (`false`) |
+| tenant_id | string  | —       | Filter by tenant ID (UUID)                     |
+
+**Response (200):**
+
+```json
+{
+  "users": [
+    {
+      "id": 1,
+      "email": "admin@poparticle.com",
+      "username": "admin",
+      "full_name": "Platform Admin",
+      "role": "user",
+      "is_active": true,
+      "is_super_admin": true,
+      "tenant_id": null,
+      "oauth_provider": null,
+      "created_at": "2025-01-01T00:00:00.000000",
+      "last_login_at": "2026-03-19T08:30:00.000000"
+    },
+    {
+      "id": 2,
+      "email": "user@techblog.com",
+      "username": "blogwriter",
+      "full_name": "Blog Writer",
+      "role": "editor",
+      "is_active": true,
+      "is_super_admin": false,
+      "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
+      "oauth_provider": "google",
+      "created_at": "2025-06-15T14:30:00.000000",
+      "last_login_at": "2026-03-18T22:15:00.000000"
+    }
+  ],
+  "total": 150,
+  "page": 1,
+  "per_page": 20,
+  "pages": 8
+}
+```
+
+#### Deactivate User
+
+```http
+POST /api/v1/admin/users/<user_id>/deactivate
+Authorization: Bearer <access_token>
+```
+
+Deactivates a user account, preventing login and API access. Admins cannot deactivate their own account.
+
+**Response (200):**
+
+```json
+{
+  "message": "User deactivated successfully",
+  "user": {
+    "id": 5,
+    "email": "user@example.com",
+    "is_active": false
+  }
+}
+```
+
+**Error (400):**
+
+```json
+{
+  "error": "Cannot deactivate your own account"
+}
+```
+
+#### Activate User
+
+```http
+POST /api/v1/admin/users/<user_id>/activate
+Authorization: Bearer <access_token>
+```
+
+Activates a previously deactivated user account.
+
+**Response (200):**
+
+```json
+{
+  "message": "User activated successfully",
+  "user": {
+    "id": 5,
+    "email": "user@example.com",
+    "is_active": true
+  }
+}
+```
+
+---
+
+### Global Admin Role Management
+
+#### Grant Global Admin
+
+```http
+POST /api/v1/admin/users/<user_id>/grant-admin
+Authorization: Bearer <access_token>
+```
+
+Grants global admin (`is_super_admin=true`) privileges to a user.
+
+**Response (200):**
+
+```json
+{
+  "message": "Global admin privileges granted successfully",
+  "user": {
+    "id": 5,
+    "email": "user@example.com",
+    "is_super_admin": true
+  }
+}
+```
+
+#### Revoke Global Admin
+
+```http
+POST /api/v1/admin/users/<user_id>/revoke-admin
+Authorization: Bearer <access_token>
+```
+
+Revokes global admin privileges from a user. The system prevents revoking the last remaining global admin to ensure at least one admin always exists.
+
+**Response (200):**
+
+```json
+{
+  "message": "Global admin privileges revoked successfully",
+  "user": {
+    "id": 5,
+    "email": "user@example.com",
+    "is_super_admin": false
+  }
+}
+```
+
+**Error (400):**
+
+```json
+{
+  "error": "Cannot revoke admin privileges. User not found or you are the last global admin."
+}
+```
+
+---
+
+### Admin Audit Logs
+
+```http
+GET /api/v1/admin/audit-logs
+Authorization: Bearer <access_token>
+```
+
+Returns a paginated, filterable list of all admin actions recorded in the audit log.
+
+**Query Parameters:**
+
+| Parameter     | Type   | Default | Description                                              |
+| ------------- | ------ | ------- | -------------------------------------------------------- |
+| page          | int    | 1       | Page number                                              |
+| per_page      | int    | 50      | Results per page (max: 100)                              |
+| admin_user_id | int    | —       | Filter by admin user ID                                  |
+| action        | string | —       | Filter by action (e.g., `tenant.suspend`, `admin.grant`) |
+| resource_type | string | —       | Filter by resource type (`tenant`, `user`, `system`)     |
+
+**Response (200):**
+
+```json
+{
+  "logs": [
+    {
+      "id": 1,
+      "admin_user_id": 1,
+      "admin_email": "admin@poparticle.com",
+      "action": "tenant.suspend",
+      "resource_type": "tenant",
+      "resource_id": "550e8400-e29b-41d4-a716-446655440000",
+      "details": {
+        "tenant_name": "Tech Blog"
+      },
+      "ip_address": "192.168.1.100",
+      "created_at": "2026-03-19T12:00:00.000000"
+    }
+  ],
+  "total": 25,
+  "page": 1,
+  "per_page": 50,
+  "pages": 1
+}
+```
+
+**Tracked Action Types:**
+
+| Action            | Resource Type | Description                    |
+| ----------------- | ------------- | ------------------------------ |
+| `dashboard.view`  | `system`      | Admin viewed the dashboard     |
+| `tenant.suspend`  | `tenant`      | Tenant was suspended           |
+| `tenant.activate` | `tenant`      | Tenant was activated           |
+| `tenant.delete`   | `tenant`      | Tenant was permanently deleted |
+| `user.deactivate` | `user`        | User account was deactivated   |
+| `user.activate`   | `user`        | User account was activated     |
+| `admin.grant`     | `user`        | Global admin role was granted  |
+| `admin.revoke`    | `user`        | Global admin role was revoked  |
+
+---
+
+---
+
+## Vercel Integration
+
+Superadmin-controlled system for connecting a Vercel account, managing shareable frontend templates (each backed by a GitHub repository), and controlling which templates are publicly visible to users.
+
+**Key Concepts:**
+
+- **`VercelConfig`** — Stores the platform-level Vercel access token and optional GitHub credentials. Only one active config exists at a time; creating a new one automatically deactivates the previous one.
+- **`FrontendTemplate`** — A shareable template with a GitHub repo URL, optional Vercel one-click-deploy URL, and an admin-controlled `is_public` visibility flag. Deletion is soft (sets `is_active=false`).
+- **Superadmin routes** (`/api/v1/admin/vercel/*`) require a global admin JWT. Non-admins receive `403 Forbidden`.
+- **User routes** (`/api/v1/vercel/*`) require a standard authenticated JWT and only expose public templates.
+
+---
+
+### Vercel Config (Admin)
+
+All config endpoints require a global admin token:
+
+```http
+Authorization: Bearer <global_admin_access_token>
+```
+
+---
+
+#### Get Active Vercel Config
+
+```http
+GET /api/v1/admin/vercel/config
+Authorization: Bearer <access_token>
+```
+
+Returns the current active Vercel config. Credential fields (`vercel_access_token`, `github_token`) are **not** included in the response.
+
+**Response (200) — config exists:**
+
+```json
+{
+  "config": {
+    "id": 1,
+    "vercel_team_id": "team_abc123",
+    "github_org": "my-org",
+    "is_active": true,
+    "created_at": "2026-03-31T08:00:00",
+    "updated_at": "2026-03-31T08:00:00"
+  }
+}
+```
+
+**Response (200) — no config yet:**
+
+```json
+{
+  "config": null
+}
+```
+
+---
+
+#### Create / Replace Vercel Config
+
+```http
+POST /api/v1/admin/vercel/config
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+Creates a new active Vercel config. Any previously active config is automatically deactivated.
+
+**Request Body:**
+
+```json
+{
+  "vercel_access_token": "tok_vercel_xxxxxxxxxxxx",
+  "vercel_team_id": "team_abc123",
+  "github_token": "ghp_xxxxxxxxxxxx",
+  "github_org": "my-org"
+}
+```
+
+| Field                 | Type   | Required | Description                                                                                                           |
+| --------------------- | ------ | -------- | --------------------------------------------------------------------------------------------------------------------- |
+| `vercel_access_token` | string | ✅       | Vercel personal or team access token                                                                                  |
+| `vercel_team_id`      | string | ❌       | Vercel team ID (`team_*`) or project ID (`prj_*`). When a project ID is provided, only that single project is synced. |
+| `github_token`        | string | ❌       | GitHub personal access token                                                                                          |
+| `github_org`          | string | ❌       | GitHub organisation or user name                                                                                      |
+
+**Response (201):**
+
+```json
+{
+  "message": "Vercel config saved successfully",
+  "config": {
+    "id": 1,
+    "vercel_team_id": "team_abc123",
+    "github_org": "my-org",
+    "is_active": true,
+    "created_at": "2026-03-31T08:00:00",
+    "updated_at": "2026-03-31T08:00:00"
+  }
+}
+```
+
+**Error (400):** `vercel_access_token` is missing.
+
+---
+
+#### Update Vercel Config
+
+```http
+PUT /api/v1/admin/vercel/config/<config_id>
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+Partially updates an existing config. Only supplied fields are changed.
+
+**Request Body (any subset of fields):**
+
+```json
+{
+  "vercel_team_id": "team_new",
+  "github_org": "new-org"
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Vercel config updated successfully",
+  "config": {
+    "id": 1,
+    "vercel_team_id": "team_new",
+    "github_org": "new-org",
+    "is_active": true,
+    "created_at": "2026-03-31T08:00:00",
+    "updated_at": "2026-03-31T09:00:00"
+  }
+}
+```
+
+**Error (404):** Config not found.
+
+---
+
+#### Delete Vercel Config
+
+```http
+DELETE /api/v1/admin/vercel/config/<config_id>
+Authorization: Bearer <access_token>
+```
+
+Permanently deletes a Vercel config.
+
+**Response (200):**
+
+```json
+{
+  "message": "Vercel config deleted successfully"
+}
+```
+
+**Error (404):** Config not found.
+
+---
+
+### Frontend Templates (Admin)
+
+All admin template endpoints require a global admin token:
+
+```http
+Authorization: Bearer <global_admin_access_token>
+```
+
+---
+
+#### List All Templates (Admin)
+
+```http
+GET /api/v1/admin/vercel/templates
+Authorization: Bearer <access_token>
+```
+
+Returns **all** templates (including private ones) with pagination.
+
+**Query Parameters:**
+
+| Parameter  | Type | Default | Description                |
+| ---------- | ---- | ------- | -------------------------- |
+| `page`     | int  | 1       | Page number                |
+| `per_page` | int  | 20      | Results per page (max 100) |
+
+**Response (200):**
+
+```json
+{
+  "templates": [
+    {
+      "id": 1,
+      "name": "Blog Starter",
+      "description": "A minimal blog starter built with Next.js",
+      "github_repo_url": "https://github.com/my-org/blog-starter",
+      "vercel_deploy_url": "https://vercel.com/new/clone?repository-url=https://github.com/my-org/blog-starter",
+      "vercel_project_id": null,
+      "preview_url": "https://blog-starter.vercel.app",
+      "custom_domain": null,
+      "tags": ["blog", "nextjs"],
+      "is_public": true,
+      "is_active": true,
+      "created_at": "2026-03-31T08:00:00",
+      "updated_at": "2026-03-31T08:00:00"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 20,
+    "total": 1,
+    "pages": 1
+  }
+}
+```
+
+---
+
+#### Create Template
+
+```http
+POST /api/v1/admin/vercel/templates
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+Creates a new frontend template. Templates are private (`is_public: false`) by default.
+
+**Request Body:**
+
+```json
+{
+  "name": "Blog Starter",
+  "github_repo_url": "https://github.com/my-org/blog-starter",
+  "description": "A minimal blog starter built with Next.js",
+  "vercel_deploy_url": "https://vercel.com/new/clone?repository-url=https://github.com/my-org/blog-starter",
+  "preview_url": "https://blog-starter.vercel.app",
+  "custom_domain": "https://myblog.com",
+  "tags": ["blog", "nextjs"],
+  "is_public": false
+}
+```
+
+| Field               | Type          | Required | Description                                                 |
+| ------------------- | ------------- | -------- | ----------------------------------------------------------- |
+| `name`              | string        | ✅       | Display name of the template                                |
+| `github_repo_url`   | string        | ✅       | GitHub repository URL                                       |
+| `description`       | string        | ❌       | Short description of the template                           |
+| `vercel_deploy_url` | string        | ❌       | Vercel one-click deploy URL                                 |
+| `preview_url`       | string        | ❌       | Live demo or screenshot URL                                 |
+| `custom_domain`     | string        | ❌       | Custom domain URL (e.g. `https://example.com`)              |
+| `tags`              | array[string] | ❌       | Categorisation tags                                         |
+| `is_public`         | boolean       | ❌       | Whether the template is publicly visible (default: `false`) |
+
+**Response (201):**
+
+```json
+{
+  "message": "Template created successfully",
+  "template": {
+    "id": 1,
+    "name": "Blog Starter",
+    "description": "A minimal blog starter built with Next.js",
+    "github_repo_url": "https://github.com/my-org/blog-starter",
+    "vercel_deploy_url": "https://vercel.com/new/clone?repository-url=https://github.com/my-org/blog-starter",
+    "vercel_project_id": null,
+    "preview_url": "https://blog-starter.vercel.app",
+    "custom_domain": null,
+    "tags": ["blog", "nextjs"],
+    "is_public": false,
+    "is_active": true,
+    "created_at": "2026-03-31T08:00:00",
+    "updated_at": "2026-03-31T08:00:00"
+  }
+}
+```
+
+**Errors:**
+
+- `400` — `name` or `github_repo_url` is missing.
+
+---
+
+#### Update Template
+
+```http
+PUT /api/v1/admin/vercel/templates/<template_id>
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+Partially updates an existing template. Only supplied fields are changed.
+
+**Request Body (any subset of fields):**
+
+```json
+{
+  "name": "Blog Starter v2",
+  "is_public": true
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Template updated successfully",
+  "template": {
+    "id": 1,
+    "name": "Blog Starter v2",
+    "description": "A minimal blog starter built with Next.js",
+    "github_repo_url": "https://github.com/my-org/blog-starter",
+    "vercel_deploy_url": "https://vercel.com/new/clone?repository-url=https://github.com/my-org/blog-starter",
+    "vercel_project_id": null,
+    "preview_url": "https://blog-starter.vercel.app",
+    "custom_domain": null,
+    "tags": ["blog", "nextjs"],
+    "is_public": true,
+    "is_active": true,
+    "created_at": "2026-03-31T08:00:00",
+    "updated_at": "2026-03-31T09:00:00"
+  }
+}
+```
+
+**Error (404):** Template not found.
+
+---
+
+#### Delete Template
+
+```http
+DELETE /api/v1/admin/vercel/templates/<template_id>
+Authorization: Bearer <access_token>
+```
+
+Soft-deletes a template (sets `is_active=false`). The template is no longer returned in any listing.
+
+**Response (200):**
+
+```json
+{
+  "message": "Template deleted successfully"
+}
+```
+
+**Error (404):** Template not found.
+
+---
+
+#### Publish Template
+
+```http
+POST /api/v1/admin/vercel/templates/<template_id>/publish
+Authorization: Bearer <access_token>
+```
+
+Makes a template publicly visible to all authenticated users.
+
+**Response (200):**
+
+```json
+{
+  "message": "Template published successfully",
+  "template": {
+    "id": 1,
+    "name": "Blog Starter",
+    "is_public": true,
+    ...
+  }
+}
+```
+
+**Error (404):** Template not found.
+
+---
+
+#### Unpublish Template
+
+```http
+POST /api/v1/admin/vercel/templates/<template_id>/unpublish
+Authorization: Bearer <access_token>
+```
+
+Removes a template from public visibility. Users can no longer see or fetch it.
+
+**Response (200):**
+
+```json
+{
+  "message": "Template unpublished successfully",
+  "template": {
+    "id": 1,
+    "name": "Blog Starter",
+    "is_public": false,
+    ...
+  }
+}
+```
+
+**Error (404):** Template not found.
+
+---
+
+#### Sync Templates from Vercel
+
+```http
+POST /api/v1/admin/vercel/templates/sync
+Authorization: Bearer <access_token>
+```
+
+Fetches all projects from the connected Vercel account using the stored credentials (`VercelConfig`) and imports them as `FrontendTemplate` records. Uses the Vercel REST API (`GET /v9/projects`) with automatic pagination. When `vercel_team_id` is a project ID (`prj_*`), fetches that single project via `GET /v9/projects/{id}` instead.
+
+**Behaviour:**
+
+- **New projects** are created as private templates (`is_public: false`) — the admin can then publish individual templates.
+- **Existing projects** (matched by `vercel_project_id`) are updated with the latest metadata from Vercel (name, GitHub URL, preview URL, etc.).
+- **Soft-deleted templates** that reappear during sync are re-activated.
+- GitHub repo URL, Vercel deploy URL, preview URL, and custom domain are automatically derived from Vercel project metadata.
+- **Custom domains** are extracted from the project's `alias` list — non-`.vercel.app` domains are stored as the `custom_domain` field.
+
+**Request Body:** None required (empty body or `{}`).
+
+**Response (200):**
+
+```json
+{
+  "message": "Synced 5 template(s) from Vercel (3 created, 1 updated, 1 unchanged)",
+  "created": 3,
+  "updated": 1,
+  "unchanged": 1,
+  "total": 5,
+  "templates": [
+    {
+      "id": 10,
+      "name": "blog-app",
+      "description": "Synced from Vercel (nextjs)",
+      "github_repo_url": "https://github.com/my-org/blog-app",
+      "vercel_deploy_url": "https://vercel.com/new/clone?repository-url=https://github.com/my-org/blog-app",
+      "vercel_project_id": "prj_xxxxxxxxxxxx",
+      "preview_url": "https://blog-app-xxx.vercel.app",
+      "custom_domain": "https://myblog.com",
+      "tags": ["nextjs"],
+      "is_public": false,
+      "is_active": true,
+      "created_at": "2026-03-31T08:00:00",
+      "updated_at": "2026-03-31T08:00:00"
+    }
+  ]
+}
+```
+
+**Errors:**
+
+- `400` — No active Vercel config found. Configure credentials first via `POST /config`.
+- `502` — Vercel API returned an error (e.g. invalid token, rate limit).
+
+---
+
+### Frontend Templates (User)
+
+User-facing endpoints that expose only publicly available templates. Require a standard authenticated JWT:
+
+```http
+Authorization: Bearer <access_token>
+```
+
+---
+
+#### List Public Templates
+
+```http
+GET /api/v1/vercel/templates
+Authorization: Bearer <access_token>
+```
+
+Returns only templates where `is_public=true` and `is_active=true`.
+
+**Query Parameters:**
+
+| Parameter  | Type | Default | Description                |
+| ---------- | ---- | ------- | -------------------------- |
+| `page`     | int  | 1       | Page number                |
+| `per_page` | int  | 20      | Results per page (max 100) |
+
+**Response (200):**
+
+```json
+{
+  "templates": [
+    {
+      "id": 1,
+      "name": "Blog Starter",
+      "description": "A minimal blog starter built with Next.js",
+      "github_repo_url": "https://github.com/my-org/blog-starter",
+      "vercel_deploy_url": "https://vercel.com/new/clone?repository-url=https://github.com/my-org/blog-starter",
+      "vercel_project_id": null,
+      "preview_url": "https://blog-starter.vercel.app",
+      "custom_domain": null,
+      "tags": ["blog", "nextjs"],
+      "is_public": true,
+      "is_active": true,
+      "created_at": "2026-03-31T08:00:00",
+      "updated_at": "2026-03-31T08:00:00"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 20,
+    "total": 1,
+    "pages": 1
+  }
+}
+```
+
+---
+
+#### Get Public Template
+
+```http
+GET /api/v1/vercel/templates/<template_id>
+Authorization: Bearer <access_token>
+```
+
+Retrieves details of a single public template. Returns `404` for templates that are private or inactive.
+
+**Response (200):**
+
+```json
+{
+  "template": {
+    "id": 1,
+    "name": "Blog Starter",
+    "description": "A minimal blog starter built with Next.js",
+    "github_repo_url": "https://github.com/my-org/blog-starter",
+    "vercel_deploy_url": "https://vercel.com/new/clone?repository-url=https://github.com/my-org/blog-starter",
+    "vercel_project_id": null,
+    "preview_url": "https://blog-starter.vercel.app",
+    "custom_domain": null,
+    "tags": ["blog", "nextjs"],
+    "is_public": true,
+    "is_active": true,
+    "created_at": "2026-03-31T08:00:00",
+    "updated_at": "2026-03-31T08:00:00"
+  }
+}
+```
+
+**Errors:**
+
+- `404` — Template not found, is private, or has been deleted.
 
 ---
 

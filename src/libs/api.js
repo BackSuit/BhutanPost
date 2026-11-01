@@ -64,7 +64,9 @@ export async function fetchAPI(path, options = {}) {
       const isRetryable = !error.status || error.status >= 500
 
       if (isLastAttempt || !isRetryable) {
-        console.error("API Error:", error.message)
+        if (error.status !== 404) {
+          console.error("API Error:", error.message)
+        }
         throw error
       }
 
@@ -233,39 +235,15 @@ export async function fetchArticle(slug) {
   if (!slug) return null
 
   try {
-    // Try the search endpoint first — fetches ~50 records instead of 1000
-    const searchData = await fetchAPI(
-      `/api/v1/articles/search?q=${encodeURIComponent(
-        slug.replace(/-/g, " ")
-      )}&limit=50&status=published`
-    ).catch(() => ({ articles: [] }))
-
-    const searchArticle = (searchData.articles || searchData.results || [])?.find(a => a.slug === slug)
-
-    if (searchArticle) {
-      const fullArticle = await fetchAPI(`/api/v1/articles/${searchArticle.id}`)
-      return normalizeArticle(fullArticle.article)
-    }
-
-    // Fall back to listing articles — slug may not match search keywords
-    const queryParams = new URLSearchParams({
-      status: "published",
-      limit: "1000",
-      sort: "date",
-      order: "desc",
-    })
-
-    const data = await fetchAPI(`/api/v1/articles?${queryParams}`)
-    const article = data.articles?.find(a => a.slug === slug)
-
-    if (article) {
-      const fullArticle = await fetchAPI(`/api/v1/articles/${article.id}`)
-      return normalizeArticle(fullArticle.article)
-    }
-
-    return null
+    const data = await fetchAPI(
+      `/api/v1/articles/slug/${encodeURIComponent(slug)}`
+    )
+    return data?.article ? normalizeArticle(data.article) : null
   } catch (error) {
-    console.error("Error fetching article:", error)
+    if (error.status === 404) {
+      return null
+    }
+    console.error(`Error fetching article (${slug}):`, error.message || error)
     return null
   }
 }
