@@ -1,9 +1,9 @@
+import Head from "next/head"
 import Layout from "@/components/layout"
 import ArticleList from "@/components/article/ArticleList"
 import Meta from "@/components/meta"
 import {
   fetchByCategory,
-  fetchCategorySlug,
   fetchPaginated,
   countArticlesByCategory,
 } from "@/libs/api"
@@ -17,6 +17,9 @@ export default function CategoryPage({ articles, category, pagination, page }) {
   return (
     <Layout>
       <Meta title={title} url={url} />
+      <Head>
+        <meta name="robots" content="noindex, follow" />
+      </Head>
       <ArticleList
         articles={articles}
         title="Category:"
@@ -73,36 +76,6 @@ export async function getStaticProps({ params }) {
 }
 
 export async function getStaticPaths() {
-  try {
-    const postsPerPage = config.posts_per_page || 9
-    const categories = await fetchCategorySlug()
-    const paths = []
-
-    // For each category, create pagination paths
-    for (const category of categories) {
-      const totalArticles = await countArticlesByCategory(category.slug)
-      const pages = Math.ceil(totalArticles / postsPerPage)
-
-      // Generate paths for pages 2 onwards (page 1 is handled by [slug].js)
-      for (let i = 2; i <= pages; i++) {
-        paths.push({
-          params: {
-            slug: category.slug,
-            page: i.toString(),
-          },
-        })
-      }
-    }
-
-    return {
-      paths,
-      fallback: "blocking",
-    }
-  } catch (error) {
-    console.error("Error generating category pagination paths:", error)
-    return {
-      paths: [],
-      fallback: "blocking",
-    }
-  }
+  // noindex pages — skip pre-building entirely, generate on demand
+  return { paths: [], fallback: "blocking" }
 }

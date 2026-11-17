@@ -1,11 +1,11 @@
 {
-  "name": "pretty-long",
-  "description": "Pretty Long News media app.",
+  "name": "bhutan-post",
+  "description": "Bhutan Post media app.",
   "version": "1.0.0",
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/bi-kash/PrettyLong"
+    "url": "https://github.com/BackSuit/BhutanPost"
   },
   "scripts": {
     "dev": "next dev",

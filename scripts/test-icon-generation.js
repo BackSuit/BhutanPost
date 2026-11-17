@@ -47,7 +47,7 @@ function testSimpleCanvas() {
 
 // Test 2: Two-line text like Logo.js
 function testTwoLineCanvas() {
-  console.log("\nTest 2: Creating two-line canvas (Pretty Long style)")
+  console.log("\nTest 2: Creating two-line canvas (Bhutan Post style)")
 
   const canvas = createCanvas(512, 512)
   const ctx = canvas.getContext("2d")

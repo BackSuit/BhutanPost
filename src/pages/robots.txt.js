@@ -4,12 +4,15 @@ function generateRobotsTxt(baseUrl) {
   return `# *
 User-agent: *
 Allow: /
+Disallow: /article/page/
+Disallow: /category/*/page/
 
 # Host
 Host: ${baseUrl}
 
 # Sitemaps
 Sitemap: ${baseUrl}/sitemap.xml
+Sitemap: ${baseUrl}/sitemap-news.xml
 `
 }
 

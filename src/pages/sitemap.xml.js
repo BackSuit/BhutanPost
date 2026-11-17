@@ -1,26 +1,28 @@
-import { fetchArticles } from "@/libs/api"
-import { fetchCategories } from "@/libs/api"
+import { fetchArticles, fetchCategories } from "@/libs/api"
+import { getAllAuthors } from "@/libs/authors"
 import siteSettings from "@/contents/site-settings.json"
 
-function generateSiteMap(articles, categories, baseUrl) {
+function escapeXml(str) {
+  return (str || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+}
+
+function generateSiteMap(articles, categories, authors, baseUrl) {
   const currentDate = new Date().toISOString()
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml"
-        xmlns:mobile="http://www.google.com/schemas/sitemap-mobile/1.0"
-        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
-        xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
-  <!-- Homepage -->
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>${baseUrl}</loc>
     <priority>1.00</priority>
     <lastmod>${currentDate}</lastmod>
     <changefreq>daily</changefreq>
   </url>
-  
-  <!-- Static Pages -->
   <url>
     <loc>${baseUrl}/meet-the-team</loc>
     <priority>0.7</priority>
@@ -45,51 +47,70 @@ function generateSiteMap(articles, categories, baseUrl) {
     <lastmod>${currentDate}</lastmod>
     <changefreq>yearly</changefreq>
   </url>
-  
-  <!-- Dynamic Categories -->
   ${categories
     .map(
-      category => `  <url>
+      category => `<url>
     <loc>${baseUrl}/category/${category.slug}</loc>
     <priority>0.7</priority>
     <lastmod>${currentDate}</lastmod>
     <changefreq>daily</changefreq>
   </url>`
     )
-    .join("\n")}
-  
-  <!-- Dynamic Articles -->
+    .join("\n  ")}
   ${articles
     .map(article => {
       const articleDate = article.date || article.published_at || currentDate
-      return `  <url>
+      const imageUrl = article.image_url || article.image || ""
+      const imageTag = imageUrl
+        ? `
+    <image:image>
+      <image:loc>${escapeXml(imageUrl)}</image:loc>
+      <image:title>${escapeXml(article.title)}</image:title>
+    </image:image>`
+        : ""
+      return `<url>
     <loc>${baseUrl}/article/${article.slug}</loc>
     <priority>0.9</priority>
     <lastmod>${new Date(articleDate).toISOString()}</lastmod>
-    <changefreq>weekly</changefreq>
+    <changefreq>weekly</changefreq>${imageTag}
   </url>`
     })
-    .join("\n")}
+    .join("\n  ")}
+  <url>
+    <loc>${baseUrl}/authors</loc>
+    <priority>0.6</priority>
+    <lastmod>${currentDate}</lastmod>
+    <changefreq>monthly</changefreq>
+  </url>
+  ${authors
+    .map(
+      author => `<url>
+    <loc>${baseUrl}/authors/${author.slug}</loc>
+    <priority>0.6</priority>
+    <lastmod>${currentDate}</lastmod>
+    <changefreq>weekly</changefreq>
+  </url>`
+    )
+    .join("\n  ")}
 </urlset>`
 }
 
 export async function getServerSideProps({ res }) {
-  const baseUrl = siteSettings.base_url || "https://prettylong.com"
+  const baseUrl = siteSettings.base_url || "https://bhutanpost.com"
 
   try {
-    // Fetch all published articles from API
-    const articles = await fetchArticles({
-      status: "published",
-      limit: 1000, // Get all articles
-      sort: "date",
-      order: "desc",
-    })
+    const [articles, categories] = await Promise.all([
+      fetchArticles({
+        status: "published",
+        limit: 1000,
+        sort: "date",
+        order: "desc",
+      }),
+      fetchCategories(),
+    ])
+    const authors = getAllAuthors()
 
-    // Fetch categories (from API or predefined based on use_api_categories setting)
-    const categories = await fetchCategories()
-
-    // Generate the XML sitemap
-    const sitemap = generateSiteMap(articles, categories, baseUrl)
+    const sitemap = generateSiteMap(articles, categories, authors, baseUrl)
 
     res.setHeader("Content-Type", "text/xml")
     res.setHeader(
@@ -99,25 +120,19 @@ export async function getServerSideProps({ res }) {
     res.write(sitemap)
     res.end()
 
-    return {
-      props: {},
-    }
+    return { props: {} }
   } catch (error) {
     console.error("Error generating sitemap:", error)
 
-    // Fallback to basic sitemap if API fails
-    const basicSitemap = generateSiteMap([], [], baseUrl)
+    const basicSitemap = generateSiteMap([], [], getAllAuthors(), baseUrl)
     res.setHeader("Content-Type", "text/xml")
     res.write(basicSitemap)
     res.end()
 
-    return {
-      props: {},
-    }
+    return { props: {} }
   }
 }
 
-// Default export to prevent Next.js errors
 export default function Sitemap() {
   return null
 }

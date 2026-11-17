@@ -1,3 +1,4 @@
+import Head from "next/head"
 import Layout from "@/components/layout"
 import ArticleList from "@/components/article/ArticleList"
 import Meta from "@/components/meta"
@@ -11,6 +12,9 @@ export default function Page({ articles, pagination, page }) {
   return (
     <Layout>
       <Meta url={url} title={title} />
+      <Head>
+        <meta name="robots" content="noindex, follow" />
+      </Head>
       <ArticleList
         title={"Articles"}
         articles={articles}
@@ -54,25 +58,6 @@ export async function getStaticProps({ params }) {
 }
 
 export async function getStaticPaths() {
-  try {
-    const postsPerPage = config.posts_per_page || 9
-    const count = await countArticles()
-    const pages = Math.max(1, Math.ceil(count / postsPerPage))
-    const paths =
-      pages > 1
-        ? Array.from(Array(pages - 1).keys()).map(it => ({
-            params: { page: (it + 2).toString() },
-          }))
-        : []
-    return {
-      paths,
-      fallback: "blocking",
-    }
-  } catch (error) {
-    console.error("Error generating article page paths:", error)
-    return {
-      paths: [],
-      fallback: "blocking",
-    }
-  }
+  // noindex pages — skip pre-building entirely, generate on demand
+  return { paths: [], fallback: "blocking" }
 }

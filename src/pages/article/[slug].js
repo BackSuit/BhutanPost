@@ -26,6 +26,7 @@ import { FiUser } from "@/components/icons"
 import ArticleMeta from "@/components/meta/ArticleMeta"
 import config from "@/contents/site-settings.json"
 import { fetchArticle, fetchArticleSlugs, fetchByCategory } from "@/libs/api"
+import { getAuthorForArticle } from "@/libs/authors"
 import markdownToHtml from "@/libs/markdownToHTML"
 import { formatDate } from "@/libs/date"
 import { ARTICLE_ID_ROUTE } from "src/constanst/routes"
@@ -134,6 +135,7 @@ export default function Article({ article, relatedArticles }) {
         date={datePublised}
         author={authorsMeta}
         image={image_url}
+        type="article"
       />
       <ArticleMeta
         title={title}
@@ -228,15 +230,23 @@ export async function getStaticProps({ params }) {
     }
   }
 
+  // Inject a deterministic fallback author when the API returns none
+  let authors = article.authors || []
+  if (authors.length === 0) {
+    const fallback = getAuthorForArticle(params.slug, article.category?.slug)
+    authors = [fallback]
+  }
+
   return {
     props: {
       article: {
         ...article,
+        authors,
         content,
       },
       relatedArticles,
     },
-    revalidate: 60, // Revalidate every 60 seconds
+    revalidate: 60,
   }
 }
 

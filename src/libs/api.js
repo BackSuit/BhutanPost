@@ -253,7 +253,7 @@ export async function fetchArticleSlugs() {
     // Limit to 50 most recent at build time — the rest are generated on-demand
     // via fallback: 'blocking' in getStaticPaths, then cached by ISR
     const data = await fetchAPI(
-      "/api/v1/articles?status=published&limit=50&sort=date&order=desc"
+      "/api/v1/articles?status=published&limit=20&sort=date&order=desc"
     )
     return (data.articles || []).map(article => ({
       title: article.title,
@@ -319,24 +319,23 @@ export async function fetchCategorySlug() {
   }))
 }
 
-// Author/User Endpoints (needs to be mapped to user endpoints)
+// Author/User Endpoints — backed by the static author pool in @/libs/authors
 export async function fetchAuthorsSlug() {
-  // This would need a dedicated authors/users endpoint in the API
-  // For now, return empty array or implement when backend supports it
-  return []
+  const { getAllAuthors } = await import("@/libs/authors")
+  return getAllAuthors().map(a => ({ name: a.name, slug: a.slug }))
 }
 
 export async function fetchAuthorArticles(slug) {
   if (!slug) return []
-  // This would need filtering by author in the API
-  // For now, return empty array or implement when backend supports it
-  return []
+  // Return all articles; the author page can filter by the deterministic mapping
+  return fetchArticles({ status: "published", limit: 1000 })
 }
 
 export async function getAuthor(slug) {
-  if (!slug) return null
-  // This would need a dedicated author endpoint
-  return null
+  if (!slug) return []
+  const { getAllAuthors } = await import("@/libs/authors")
+  const author = getAllAuthors().find(a => a.slug === slug)
+  return author ? [author] : []
 }
 
 // Slug validation

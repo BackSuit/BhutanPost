@@ -1,7 +1,7 @@
 import Head from "next/head"
 import config from "@/contents/site-settings.json"
 
-export default function Meta({ title, description, keywords, url, image }) {
+export default function Meta({ title, description, keywords, url, image, type }) {
   // Use site_name for browser title, fallback to site_title
   const siteName = config.site_name || config.site_title
 
@@ -34,7 +34,7 @@ export default function Meta({ title, description, keywords, url, image }) {
       <meta property="og:title" content={metaTitle} />
       <meta property="og:description" content={metaDescription} />
       <meta property="og:image" content={image ?? config.seo_image} />
-      <meta property="og:type" content="article" />
+      <meta property="og:type" content={type ?? "website"} />
 
       {/* Twitter Card */}
       <meta property="twitter:card" content="summary_large_image" />
