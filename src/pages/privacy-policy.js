@@ -27,6 +27,7 @@ const Privacy = () => {
         <Meta
           title="Privacy Policy"
           description={`Privacy and policy of ${siteName}`}
+          url="/privacy-policy"
         />
         <Container>
           <Heading size="xl" as="h1">

@@ -15,6 +15,7 @@ export default function TermsOfServicePage() {
         <Meta
           title="Terms of Service"
           description={`Terms of Service of ${siteName}`}
+          url="/terms-of-service"
         />
 
         <Box mb={6}>

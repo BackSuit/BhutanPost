@@ -175,7 +175,7 @@ export async function fetchHero() {
   }
 }
 
-export async function fetchByCategory(slug) {
+export async function fetchByCategory(slug, { limit } = {}) {
   if (!slug) return { articles: [], category: null }
 
   try {
@@ -192,6 +192,7 @@ export async function fetchByCategory(slug) {
       sort: "date",
       order: "desc",
     })
+    if (limit) queryParams.set("limit", limit.toString())
 
     const data = await fetchAPI(`/api/v1/articles?${queryParams}`)
 

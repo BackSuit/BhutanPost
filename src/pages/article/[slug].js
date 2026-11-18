@@ -219,14 +219,31 @@ export async function getStaticProps({ params }) {
   if (article.category?.slug) {
     try {
       const { articles: catArticles } = await fetchByCategory(
-        article.category.slug
+        article.category.slug,
+        { limit: 1000 }
       )
-      // Exclude the current article
-      relatedArticles = (catArticles || [])
-        .filter(a => a.slug !== params.slug)
-        .slice(0, 4)
+      const currentIndex = (catArticles || []).findIndex(
+        item => item.slug === params.slug
+      )
+
+      if (currentIndex >= 0) {
+        relatedArticles = catArticles
+          .map((item, index) => ({
+            item,
+            distance: Math.abs(index - currentIndex),
+          }))
+          .filter(({ distance }) => distance > 0)
+          .sort((a, b) => a.distance - b.distance)
+          .slice(0, 4)
+          .map(({ item }) => item)
+          .sort(
+            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+          )
+      } else {
+        relatedArticles = (catArticles || []).slice(0, 4)
+      }
     } catch (e) {
-      // Silently fail - related articles are non-critical
+      console.error("Error fetching related articles:", e)
     }
   }
 
